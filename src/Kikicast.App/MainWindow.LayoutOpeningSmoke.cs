@@ -16,26 +16,7 @@ public partial class MainWindow
         Process? child = null; var children = new List<Process>(); var completed = false;
         try
         {
-            System.IO.File.Copy(fixturePath, exe);
-            var folder = System.IO.Path.GetDirectoryName(fixturePath)!;
-            foreach (var name in new[] { "PortableFixture.dll", "PortableFixture.runtimeconfig.json", "PortableFixture.deps.json" }) System.IO.File.Copy(System.IO.Path.Combine(folder, name), System.IO.Path.Combine(root, name));
-            using (var config = System.Text.Json.JsonDocument.Parse(System.IO.File.ReadAllText(System.IO.Path.Combine(root, "PortableFixture.runtimeconfig.json"))))
-            {
-                if (config.RootElement.GetProperty("runtimeOptions").TryGetProperty("includedFrameworks", out _))
-                {
-                    // Published self-contained fixture needs its matching runtime beside
-                    // the renamed owned apphost. Never copy arbitrary application trees.
-                    var libraries = System.IO.Directory.EnumerateFiles(folder, "*.dll", System.IO.SearchOption.TopDirectoryOnly).Take(257).ToArray();
-                    if (libraries.Length > 256 || libraries.Sum(x => new System.IO.FileInfo(x).Length) > 512L * 1024 * 1024) throw new InvalidOperationException("Owned published fixture runtime exceeds copy budget.");
-                    foreach (var library in libraries)
-                    {
-                        var name = System.IO.Path.GetFileName(library);
-                        if (name == "PortableFixture.dll" || name.StartsWith("Kikicast.", StringComparison.OrdinalIgnoreCase)) continue;
-                        if (!LocalPathSafety.IsFile(library)) throw new InvalidOperationException("Owned fixture runtime is missing/linked.");
-                        System.IO.File.Copy(library, System.IO.Path.Combine(root, name));
-                    }
-                }
-            }
+            OwnedFixtureDeployment.Copy(fixturePath, exe);
             entries = [new("Owned layout opening application", exe)];
             var screen = LayoutDisplays.Read().First(); var entry = new WindowLayoutEntry(Guid.NewGuid(), entries[0].Id, screen.Display)
                 { WidthFraction = .46, HeightFraction = .58, Anchor = WindowSizeAnchor.BottomRight };

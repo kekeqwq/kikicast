@@ -384,9 +384,8 @@ public partial class App : System.Windows.Application
     {
         var folder = Path.Combine(smokeDirectory!, "OwnedPortable");
         Directory.CreateDirectory(folder);
-        foreach (var suffix in new[] { ".exe", ".dll", ".deps.json", ".runtimeconfig.json" })
-            File.Copy(Path.Combine(Path.GetDirectoryName(fixture)!, "PortableFixture" + suffix), Path.Combine(folder, "PortableFixture" + suffix));
         var exe = Path.Combine(folder, "PortableFixture.exe");
+        OwnedFixtureDeployment.Copy(fixture, exe);
         using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe) { UseShellExecute = false })
             ?? throw new InvalidOperationException("Discovery fixture did not start");
         try
