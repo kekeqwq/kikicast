@@ -19,6 +19,23 @@ public partial class MainWindow
             System.IO.File.Copy(fixturePath, exe);
             var folder = System.IO.Path.GetDirectoryName(fixturePath)!;
             foreach (var name in new[] { "PortableFixture.dll", "PortableFixture.runtimeconfig.json", "PortableFixture.deps.json" }) System.IO.File.Copy(System.IO.Path.Combine(folder, name), System.IO.Path.Combine(root, name));
+            using (var config = System.Text.Json.JsonDocument.Parse(System.IO.File.ReadAllText(System.IO.Path.Combine(root, "PortableFixture.runtimeconfig.json"))))
+            {
+                if (config.RootElement.GetProperty("runtimeOptions").TryGetProperty("includedFrameworks", out _))
+                {
+                    // Published self-contained fixture needs its matching runtime beside
+                    // the renamed owned apphost. Never copy arbitrary application trees.
+                    var libraries = System.IO.Directory.EnumerateFiles(folder, "*.dll", System.IO.SearchOption.TopDirectoryOnly).Take(257).ToArray();
+                    if (libraries.Length > 256 || libraries.Sum(x => new System.IO.FileInfo(x).Length) > 512L * 1024 * 1024) throw new InvalidOperationException("Owned published fixture runtime exceeds copy budget.");
+                    foreach (var library in libraries)
+                    {
+                        var name = System.IO.Path.GetFileName(library);
+                        if (name == "PortableFixture.dll" || name.StartsWith("Kikicast.", StringComparison.OrdinalIgnoreCase)) continue;
+                        if (!LocalPathSafety.IsFile(library)) throw new InvalidOperationException("Owned fixture runtime is missing/linked.");
+                        System.IO.File.Copy(library, System.IO.Path.Combine(root, name));
+                    }
+                }
+            }
             entries = [new("Owned layout opening application", exe)];
             var screen = LayoutDisplays.Read().First(); var entry = new WindowLayoutEntry(Guid.NewGuid(), entries[0].Id, screen.Display)
                 { WidthFraction = .46, HeightFraction = .58, Anchor = WindowSizeAnchor.BottomRight };
@@ -37,6 +54,9 @@ public partial class MainWindow
             var end = DateTimeOffset.UtcNow.AddSeconds(8);
             while ((executing || !store.History.Launches.Any(x => x.Path == layout.EntryId)) && DateTimeOffset.UtcNow < end) await Task.Delay(25);
             if (executing || !store.History.Launches.Any(x => x.Path == layout.EntryId)) throw new InvalidOperationException("Registered missing-app launch did not finish: " + Status.Text);
+            var initialReceipt = System.IO.Path.Combine(root, "owned-input-received.json");
+            if (!System.IO.File.Exists(initialReceipt) || System.Text.Json.JsonSerializer.Deserialize<string[]>(await System.IO.File.ReadAllTextAsync(initialReceipt))?.Length != 0)
+                throw new InvalidOperationException("Owned fixture managed startup receipt missing; native initialization/error windows are not accepted as success.");
             var native = LayoutWindowInventory.Read(apps); var window = native.Windows.Single();
             var target = native.Targets[window.Handle]; child = Process.GetProcessById((int)target.ProcessId);
             if (child.StartTime != target.Started) throw new InvalidOperationException("Owned launched process cookie changed.");
