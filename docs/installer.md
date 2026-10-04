@@ -4,7 +4,7 @@
 
 - Per-user `{localappdata}\Programs\Kikicast`, HKCU uninstall entry, current-user Start menu application/readme/uninstall links. No autostart/desktop shortcut/file associations by default.
 - Same stable AppId `{D3F06B26-A208-462E-8E42-25F58E04A1BC}` for architectures/updates; old directory/group reused. Native apphost/coreclr PE machine must match requested payload architecture. Windows 11 minimum.
-- ARM64 payload requires ARM64 Windows. x64 payload accepts x64-compatible Windows (including Windows 11 ARM64 emulation); ARM64 users should choose the native payload. Inno's setup engine is x64, not an invented ARM64 installer engine.
+- Native OS architecture comes from public `IsWow64Process2`, not an emulated shell's environment/.NET Framework report. ARM64 payload requires ARM64 Windows. x64 payload accepts x64-compatible Windows (including Windows 11 ARM64 emulation); ARM64 users should choose the native payload. Inno's setup engine is x64, not an invented ARM64 installer engine.
 - `PrivilegesRequired=lowest`, `CloseApplications=no`, `RestartApplications=no`, `AppMutex=Local\Kikicast`. Ask user to exit tray app, never stop/kill it. Installer cannot bypass held files or force an update.
 - Uninstall removes recorded installed files/links/uninstall registration only. No wildcard UninstallDelete, home-data deletion, profile migration, process enumeration/termination or user-app activation. User-created unknown files are not swept. Settings/history/commands remain in home configuration.
 - Preview is visibly incomplete and unsigned, with checksums/source link/licenses/runtime notices. It is not signing/native x64/final acceptance. Stable gating remains unchanged: pending portable/native/security/signing checks refuse.

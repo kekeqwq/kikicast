@@ -9,6 +9,8 @@ public sealed class ReleaseInvocationTests
     private static async Task<(int Code, string Output, string Error)> Describe(params string[] arguments)
     {
         var info = new ProcessStartInfo("powershell.exe") { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
+        info.Environment["PROCESSOR_ARCHITECTURE"] = "AMD64"; // emulated-shell environment must not misidentify an ARM64 OS
+        info.Environment.Remove("PROCESSOR_ARCHITEW6432");
         foreach (var arg in new[] { "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", Path.Combine(AppContext.BaseDirectory, "scripts", "package-release.ps1"), "-DescribeInvocation" }.Concat(arguments)) info.ArgumentList.Add(arg);
         using var process = Process.Start(info)!; var output = process.StandardOutput.ReadToEndAsync(); var error = process.StandardError.ReadToEndAsync();
         await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(20)); return (process.ExitCode, await output, await error);

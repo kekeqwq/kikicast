@@ -34,7 +34,24 @@ if (-not $Preview) {
     if (-not $SignTool -or -not $CertificateThumbprint) { throw 'Stable release requires a trusted signing certificate and signtool.exe.' }
 } elseif (-not $Version.Contains('-')) { throw 'Preview installers must have a prerelease version.' }
 if ($CrossPublishPreview -and -not $Preview) { throw 'CrossPublishPreview requires Preview.' }
-$native = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }
+# Environment/.NET Framework architecture can report x64 inside an emulated
+# Git Bash/PowerShell process on ARM64. Public kernel API reads the real OS.
+Add-Type @'
+using System;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+public static class KikicastPackageArchitecture {
+    [DllImport("kernel32.dll", SetLastError=true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsWow64Process2(IntPtr process, out ushort processMachine, out ushort nativeMachine);
+    public static ushort NativeMachine() {
+        ushort process, native;
+        if (!IsWow64Process2(new IntPtr(-1), out process, out native)) throw new Win32Exception(Marshal.GetLastWin32Error());
+        return native;
+    }
+}
+'@
+$native = switch ([KikicastPackageArchitecture]::NativeMachine()) { 0xAA64 { 'ARM64' }; 0x8664 { 'AMD64' }; default { 'unsupported' } }
 $expected = if ($Runtime -eq 'win-arm64') { 'ARM64' } else { 'AMD64' }
 $emulated = $native -ne $expected
 if ($emulated -and (-not $CrossPublishPreview -or $native -ne 'ARM64' -or $Runtime -ne 'win-x64')) { throw "Run $Runtime on matching native Windows; only explicit x64-on-ARM64 emulated preview validation is supported." }
