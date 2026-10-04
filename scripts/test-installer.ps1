@@ -34,7 +34,7 @@ try {
     if (Test-Path $registry) { throw 'Private fixture identity unexpectedly exists; refusing mutation.' }
     # Only AppId/mutex/output filename differ from the released installer recipe.
     # Never overwrite or unregister a preexisting real Kikicast installation.
-    & $InnoCompiler '/Qp' ('/DPayloadDir=' + $PayloadDirectory) ('/DOutputDir=' + $work) ('/DAppVersion=' + $Version) ('/DTargetRuntime=' + $Runtime) ('/DSetupAppId={' + $id) ('/DSetupMutex=Local\Kikicast.OwnedSetup.' + $id) '/DOutputName=OwnedInstaller' (Join-Path $repo 'scripts/installer/Kikicast.iss')
+    & $InnoCompiler '/Qp' ('/DPayloadDir=' + $PayloadDirectory) ('/DOutputDir=' + $work) ('/DAppVersion=' + $Version) ('/DTargetRuntime=' + $Runtime) ('/DSetupAppId={' + $id) ('/DSetupMutex=Local\Kikicast.OwnedSetup.' + ([guid]$id).ToString('N')) '/DOutputName=OwnedInstaller' (Join-Path $repo 'scripts/installer/Kikicast.iss')
     if ($LASTEXITCODE -ne 0) { throw 'Owned installer fixture compilation failed.' }
     $setup = Join-Path $work 'OwnedInstaller.exe'
     $args = @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',('/DIR="' + $app + '"'),('/GROUP="' + $group + '"'),('/LOG="' + (Join-Path $EvidenceDirectory 'install.log') + '"'))
