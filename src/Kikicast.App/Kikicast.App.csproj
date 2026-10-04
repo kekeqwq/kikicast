@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kikicast.Core\Kikicast.Core.csproj" />
+    <ProjectReference Include="..\Kikicast.Windows\Kikicast.Windows.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\NOTICE.md" Link="NOTICE.md" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\third-party\*" Link="licenses\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\kikicast.ico</ApplicationIcon>
+    <Version>0.1.0-preview.1</Version>
+    <Product>Kikicast</Product>
+    <Description>Windows-native launcher and window management (preview)</Description>
+    <RepositoryUrl>https://github.com/kekeqwq/kikicast</RepositoryUrl>
+    <PackageLicenseExpression>AGPL-3.0-only</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\kikicast.ico" />
+    <Content Include="Assets\kikicast.ico" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

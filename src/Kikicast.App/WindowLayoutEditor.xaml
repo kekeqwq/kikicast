@@ -1,0 +1,38 @@
+<Window x:Class="Kikicast.App.WindowLayoutEditor" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="Window layout draft" Icon="Assets/kikicast.ico" Width="840" Height="720" MinWidth="700" MinHeight="520" WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+ Background="{DynamicResource WindowBrush}" Foreground="{DynamicResource ForegroundBrush}">
+ <Grid Margin="24"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <StackPanel><TextBlock Text="Window layout" FontSize="23" FontWeight="SemiBold"/><TextBlock Text="Place existing windows; optionally open saved files/URIs or launch missing apps. Missing displays always skip." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,14"/></StackPanel>
+  <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
+   <StackPanel Orientation="Horizontal"><TextBlock Text="Layout name" VerticalAlignment="Center"/><TextBox x:Name="LayoutName" Width="280" Margin="12,0,12,0" AutomationProperties.Name="Layout name"/><CheckBox x:Name="LayoutEnabled" Content="Enabled" VerticalAlignment="Center"/></StackPanel>
+   <StackPanel Orientation="Horizontal" Margin="0,12,0,12"><CheckBox x:Name="UseGap" Content="Use preferred window gap" Checked="GeometryChanged" Unchecked="GeometryChanged"/><Button x:Name="RefreshDisplaysButton" Content="Refresh displays" Click="RefreshDisplays" Margin="16,0,0,0" Padding="10,4"/></StackPanel>
+   <CheckBox x:Name="LaunchMissing" Content="Allow application opening (missing apps or saved inputs)" Margin="0,0,0,8" AutomationProperties.Name="Launch missing layout applications"/>
+   <TextBlock Text="Off by default, including old layouts. Saved inputs always request a fresh window, not an existing document. Each exact app/input opens once; sequential event waits share a 10-second budget. Original shortcut arguments remain unchanged. Cancel never kills opened apps." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,12"/>
+   <Border CornerRadius="12" Background="{DynamicResource SurfaceBrush}" Padding="8"><Canvas x:Name="Preview" Height="175" SizeChanged="PreviewSizeChanged" ClipToBounds="True"/></Border>
+   <TextBlock x:Name="PreviewNote" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,12"/>
+   <ListBox x:Name="EntryList" MaxHeight="110" MinHeight="42" Background="Transparent" BorderThickness="0" DisplayMemberPath="Label" ItemContainerStyle="{StaticResource LayoutListItemStyle}" SelectionChanged="SelectEntry" AutomationProperties.Name="Layout entries"/>
+   <StackPanel Orientation="Horizontal" Margin="0,8,0,12"><Button Content="New entry" Click="NewEntry"/><Button Content="Remove entry" Click="RemoveEntry" Margin="8,0,0,0"/><Button Content="Move up" Click="MoveUp" Margin="8,0,0,0"/><Button Content="Move down" Click="MoveDown" Margin="8,0,0,0"/></StackPanel>
+   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <StackPanel Margin="0,0,12,10"><TextBlock Text="Application" Margin="0,0,0,5"/><ComboBox x:Name="ApplicationChoice" DisplayMemberPath="Name" SelectionChanged="GeometryChanged" InputMethod.IsInputMethodEnabled="False" AutomationProperties.Name="Layout application"/></StackPanel>
+    <StackPanel Grid.Column="1" Margin="0,0,0,10"><TextBlock Text="Display (exact device identity)" Margin="0,0,0,5"/><ComboBox x:Name="DisplayChoice" DisplayMemberPath="Name" SelectionChanged="GeometryChanged" InputMethod.IsInputMethodEnabled="False" AutomationProperties.Name="Layout display"/></StackPanel>
+    <StackPanel Grid.Row="1" Margin="0,0,12,10"><TextBlock Text="Width · % of work canvas"/><TextBox x:Name="WidthPercent" TextChanged="GeometryChanged" AutomationProperties.Name="Layout width percent"/></StackPanel>
+    <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,10"><TextBlock Text="Height · % of work canvas"/><TextBox x:Name="HeightPercent" TextChanged="GeometryChanged" AutomationProperties.Name="Layout height percent"/></StackPanel>
+    <StackPanel Grid.Row="2" Margin="0,0,12,10"><TextBlock Text="Horizontal offset · DIP"/><TextBox x:Name="OffsetX" TextChanged="GeometryChanged" AutomationProperties.Name="Layout horizontal offset"/></StackPanel>
+    <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,10"><TextBlock Text="Vertical offset · DIP"/><TextBox x:Name="OffsetY" TextChanged="GeometryChanged" AutomationProperties.Name="Layout vertical offset"/></StackPanel>
+    <StackPanel Grid.Row="3" Margin="0,0,12,10"><TextBlock Text="Anchor" Margin="0,0,0,5"/><ComboBox x:Name="AnchorChoice" SelectionChanged="GeometryChanged" InputMethod.IsInputMethodEnabled="False" AutomationProperties.Name="Layout anchor"/></StackPanel>
+    <CheckBox Grid.Row="3" Grid.Column="1" x:Name="BringToFront" Content="Bring this entry to front (at most one)" VerticalAlignment="Center"/>
+   </Grid>
+   <TextBlock Text="Saved input (optional)" Margin="0,8,0,5"/>
+   <ComboBox x:Name="InputKindChoice" SelectionChanged="InputKindChanged" InputMethod.IsInputMethodEnabled="False" AutomationProperties.Name="Layout saved input kind"/>
+   <TextBox x:Name="InputValue" MaxLength="16384" MinHeight="38" MaxHeight="90" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="0,6,0,6" AutomationProperties.Name="Layout saved input value"/>
+   <TextBlock x:Name="InputHint" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+   <TextBlock Text="Trusted launch configuration: these values are stored in plaintext settings and run without another prompt through Enter/global shortcuts when opening is enabled. They are not searched, learned or logged. Apps may interpret their own arguments as commands; this is not a sandbox. Do not store passwords/secrets. Save/preview never opens anything." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+   <Button x:Name="KeepEntryButton" Content="Keep entry draft" Click="KeepEntry" HorizontalAlignment="Left"/>
+   <TextBlock Text="Keep each entry before switching. Percentages clamp to 0–100 (zero requests 1 px); offsets clamp to ±10000 DIP. Preview is requested geometry, not a desktop simulation: app minimums may differ. No titles or command lines are inspected." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,10,0,12"/>
+  </StackPanel></ScrollViewer>
+  <Grid Grid.Row="2" Margin="0,12,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+   <TextBlock x:Name="Feedback" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,12,0" VerticalAlignment="Center" Text="Keep layout draft stages it in Settings; Save changes persists it with shortcuts. Closing discards this editor's unkept draft."/>
+   <StackPanel Grid.Column="1" Orientation="Horizontal"><Button Content="Cancel" IsCancel="True"/><Button x:Name="KeepLayoutButton" Content="Keep layout draft" Click="KeepLayout" Margin="8,0,0,0"/></StackPanel>
+  </Grid>
+ </Grid>
+</Window>

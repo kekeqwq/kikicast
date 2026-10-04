@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Compile Include="../../tools/Kikicast.Native.Acceptance/NativeAcceptanceOptions.cs" Link="NativeAcceptanceOptions.cs" />
+    <None Include="../../src/Kikicast.App/Assets/kikicast.ico" Link="icon-fixture.ico" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../scripts/smoke-test.ps1" Link="smoke-test.ps1" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../scripts/package-release.ps1" Link="scripts/package-release.ps1" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../scripts/test-installer.ps1" Link="scripts/test-installer.ps1" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../scripts/installer/Kikicast.iss" Link="scripts/installer/Kikicast.iss" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../docs/release-readiness.json" Link="docs/release-readiness.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kikicast.Windows\Kikicast.Windows.csproj" />
+  </ItemGroup>
+
+</Project>

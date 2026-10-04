@@ -1,0 +1,230 @@
+<Window x:Class="Kikicast.App.SettingsWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Kikicast settings" Icon="Assets/kikicast.ico" Width="820" Height="730"
+ WindowStartupLocation="CenterScreen" MinWidth="660" MinHeight="520" Background="{DynamicResource WindowBrush}" Foreground="{DynamicResource ForegroundBrush}"
+ PreviewKeyDown="RecordDown" PreviewKeyUp="RecordUp" PreviewMouseDown="MousePressed" Closing="WindowClosing">
+ <Window.Resources>
+  <DataTemplate x:Key="BindingRowTemplate">
+   <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="16,12" Margin="0,4">
+    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="175"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <StackPanel VerticalAlignment="Center"><TextBlock Text="{Binding Name}" FontSize="14"/><TextBlock Text="{Binding Description}" Foreground="{DynamicResource MutedBrush}" FontSize="11" Margin="0,4,10,0" TextWrapping="Wrap"/></StackPanel>
+     <Button Grid.Column="1" Content="{Binding Label}" Tag="{Binding}" Click="StartRecording" ToolTip="Click to record a shortcut or double-tap" AutomationProperties.Name="{Binding AccessibleName}">
+      <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers>
+       <DataTrigger Binding="{Binding IsRecording}" Value="True"><Setter Property="Background" Value="{DynamicResource AccentSoftBrush}"/><Setter Property="BorderBrush" Value="{DynamicResource FocusBorderBrush}"/></DataTrigger>
+      </Style.Triggers></Style></Button.Style>
+     </Button>
+     <Button Grid.Column="2" Content="Clear" Tag="{Binding}" Click="ClearBinding" IsEnabled="{Binding HasBinding}" Margin="8,0,0,0" Padding="9,7" ToolTip="Remove this shortcut"/>
+    </Grid>
+   </Border>
+  </DataTemplate>
+ </Window.Resources>
+ <Grid Margin="28,24">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <StackPanel Margin="0,0,0,20"><TextBlock Text="Settings" FontSize="27" FontWeight="SemiBold"/><TextBlock Text="Kikicast · native Windows workflow" Foreground="{DynamicResource MutedBrush}" Margin="0,5,0,0"/></StackPanel>
+  <TabControl x:Name="Categories" Grid.Row="1" SelectionChanged="CategoryChanged">
+   <TabItem Header="General">
+    <ScrollViewer VerticalScrollBarVisibility="Hidden"><StackPanel Margin="0,0,4,12">
+     <TextBlock Text="Palette shortcut" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,8"/>
+     <ItemsControl x:Name="GlobalBindings" ItemTemplate="{StaticResource BindingRowTemplate}"/>
+     <Button Content="Restore default shortcuts" HorizontalAlignment="Right" Margin="0,10,0,0" Click="ResetBindings" ToolTip="Keep only double Ctrl and clear every other shortcut after saving"/>
+     <CheckBox x:Name="Fallback" Content="Legacy Alt+Space from an older configuration (clear to remove)" Visibility="Collapsed" Margin="0,12"/>
+     <CheckBox x:Name="Suggestions" Content="Show suggestions in empty search" Margin="0,16,0,0"/>
+     <TextBlock Text="Favorites: Ctrl+Shift+F · reorder: Ctrl+Alt+↑/↓ · launch: Ctrl+1…9/0" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+     <TextBlock Text="Interface and input" FontSize="18" FontWeight="SemiBold" Margin="0,24,0,12"/>
+     <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="18" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+      <StackPanel>
+       <TextBlock Text="Startup stays in the tray. Only the shortcut opens the palette." Margin="0,0,0,12"/>
+       <TextBlock Text="The palette uses an installed English keyboard and disables IME composition." Margin="0,0,0,6"/>
+       <TextBlock Text="If no English layout is installed, Kikicast asks you to add one. It never changes the system keyboard list." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+       <TextBlock Text="Chinese names match full pinyin, initials, and fuzzy input. Example: 微信 → weixin / wx." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,14"/>
+       <TextBlock Text="Colors follow the system theme and accent. The palette has a translucent surface."/>
+       <TextBlock Text="The frosted background is captured once before opening, held only in memory, and released on close. It is not live Acrylic. High contrast or disabled Windows transparency uses a solid background." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+      </StackPanel>
+     </Border>
+    </StackPanel></ScrollViewer>
+   </TabItem>
+   <TabItem Header="Launcher">
+    <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <StackPanel Margin="0,0,0,12">
+      <CheckBox x:Name="EnableApplications" Content="Enable Applications (indexing, discovery, search and launch)"/>
+      <CheckBox x:Name="ShowApplicationIcons" Content="Show application icons (local resources only)" Margin="0,8,0,0"/>
+      <CheckBox x:Name="EnableActionsPanel" Content="Enable Ctrl+K Actions panel" Margin="0,8,0,0"/>
+      <StackPanel Orientation="Horizontal" Margin="0,10,0,0"><TextBlock Text="Root search sensitivity" VerticalAlignment="Center" Margin="0,0,14,0"/>
+       <RadioButton x:Name="SensitivityLow" GroupName="SearchSensitivity" Content="Low" Foreground="{DynamicResource ForegroundBrush}" Margin="0,0,16,0"/>
+       <RadioButton x:Name="SensitivityMedium" GroupName="SearchSensitivity" Content="Medium" Foreground="{DynamicResource ForegroundBrush}" Margin="0,0,16,0"/>
+       <RadioButton x:Name="SensitivityHigh" GroupName="SearchSensitivity" Content="High" Foreground="{DynamicResource ForegroundBrush}"/>
+      </StackPanel>
+      <TextBlock Text="Low accepts loose fuzzy hits; Medium prefers word starts; High requires stronger alignments. Exact names and intentional alias prefixes remain eligible. Applies on Save." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+      <TextBlock Text="Feature switches apply on Save changes. Aliases/visibility/favorites apply with Save item. Global shortcut drafts apply with Save changes. Hidden rows keep their shortcuts; disabling a feature prevents execution." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,10,0,0"/>
+      <TextBox x:Name="LauncherFilter" Margin="0,10,0,0" TextChanged="FilterLauncherItems" AutomationProperties.Name="Filter launcher settings items"/>
+     </StackPanel>
+     <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="270"/></Grid.ColumnDefinitions>
+      <ListBox x:Name="LauncherItems" SelectionChanged="LauncherItemSelected" Background="Transparent" BorderThickness="0" DisplayMemberPath="Name" ScrollViewer.VerticalScrollBarVisibility="Hidden"/>
+      <ScrollViewer x:Name="LauncherItemScroll" Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="18,0,0,0"><StackPanel Margin="0,0,4,0">
+       <TextBlock x:Name="LauncherItemTitle" Text="Select an item" TextWrapping="Wrap" FontWeight="SemiBold"/>
+       <TextBlock Text="Alias (blank = none)" Margin="0,16,0,6"/><TextBox x:Name="LauncherAlias" MaxLength="120" AutomationProperties.Name="Launcher alias"/>
+       <CheckBox x:Name="LauncherVisible" Content="Show in launcher search" Margin="0,16,0,0"/>
+       <CheckBox x:Name="LauncherFavorite" Content="Favorite" Margin="0,10,0,0"/>
+       <Button Content="Save item" Click="SaveLauncherItem" HorizontalAlignment="Left" Margin="0,16,0,0" Padding="12,7"/>
+       <StackPanel x:Name="LauncherBindingEditor" IsEnabled="False" Margin="0,16,0,0">
+        <TextBlock Text="Global shortcut" FontWeight="SemiBold" Margin="0,0,0,6"/>
+        <Button x:Name="ItemBindingButton" Content="{Binding Label}" Tag="{Binding}" Click="StartRecording" AutomationProperties.Name="{Binding AccessibleName}" HorizontalAlignment="Stretch"/>
+        <Button x:Name="ItemClearBindingButton" Content="Clear shortcut draft" Tag="{Binding}" IsEnabled="{Binding HasBinding}" Click="ClearBinding" Margin="0,6,0,0" HorizontalAlignment="Left" Padding="10,6"/>
+       </StackPanel>
+       <TextBlock x:Name="LauncherBindingHint" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+       <TextBlock Text="Selecting another item discards unsaved alias/visibility edits but keeps shortcut drafts. Settings stays visible; unavailable bound items can be cleared here." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,12,0,0"/>
+      </StackPanel></ScrollViewer>
+     </Grid>
+     <StackPanel Grid.Row="2" Margin="0,14,0,0">
+      <WrapPanel><Button Content="Clear learned ranking…" Click="ResetAllLearning" Padding="10,7" Margin="0,0,8,0"/><Button Content="Clear calculation history…" Click="ClearCalculationHistory" Padding="10,7"/></WrapPanel>
+      <TextBlock x:Name="LauncherStatus" Text="Filter by name, ID or existing alias. Unavailable references are kept for recovery." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,10,0,0"/>
+     </StackPanel>
+    </Grid>
+   </TabItem>
+   <TabItem Header="Features">
+    <ScrollViewer VerticalScrollBarVisibility="Hidden"><StackPanel Margin="0,0,4,12">
+     <TextBlock Text="Feature availability" FontSize="18" FontWeight="SemiBold"/>
+     <TextBlock Text="Disabled features disappear from search and cannot run. Stored data and favorites are retained. Save changes to apply." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,20"/>
+     <CheckBox x:Name="EnableCalculator" Content="Calculator" Margin="0,8"/>
+     <CheckBox x:Name="EnableCurrency" Content="Currency conversion (requires Calculator)" Margin="20,8"/>
+     <CheckBox x:Name="EnableCalcHistory" Content="Calculation history (show and record)" Margin="0,8"/>
+     <CheckBox x:Name="EnableShell" Content="Run Shell Command / interactive PowerShell" Margin="0,8"/>
+     <CheckBox x:Name="EnableShellFallback" Content="Use current query with Run Shell Command" Margin="20,8"/>
+     <CheckBox x:Name="EnableSystem" Content="System commands (Open / Empty Recycle Bin)" Margin="0,8"/>
+     <TextBlock Text="Window management, discovery and saved commands have their own pages. Turning off currency conversion prevents new rate requests; an existing request may finish." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,20,0,0"/>
+    </StackPanel></ScrollViewer>
+   </TabItem>
+   <TabItem Header="Commands">
+    <Grid x:Name="CommandsPage"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <StackPanel Margin="0,0,0,12">
+      <WrapPanel Margin="0,0,0,8"><Button Content="Import JSON…" Click="ImportCommands" Padding="10,5" Margin="0,0,8,0"/><Button Content="Export JSON…" Click="ExportCommands" Padding="10,5"/></WrapPanel>
+      <CheckBox x:Name="EnableSavedCommands" Content="Enable saved commands"/>
+      <CheckBox x:Name="ShowSavedCommands" Content="Show saved commands in launcher (favorites remain available)" Margin="0,8,0,0"/>
+      <TextBlock Text="PowerShell 7 · Enter runs in the system terminal without confirmation. Scripts are stored in commands.json. Disabled commands are kept but cannot run." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+     </StackPanel>
+     <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="210"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <DockPanel Margin="0,0,16,0"><Button DockPanel.Dock="Top" Content="New command" Click="NewCommand" Margin="0,0,0,8"/>
+       <ListBox x:Name="CommandList" SelectionChanged="CommandSelected" Background="Transparent" BorderThickness="0" DisplayMemberPath="Name" ScrollViewer.VerticalScrollBarVisibility="Hidden"/>
+      </DockPanel>
+      <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Hidden"><StackPanel>
+       <TextBlock Text="Name"/><TextBox x:Name="CommandName" MaxLength="120" Margin="0,6,0,12" AutomationProperties.Name="Command name"/>
+       <TextBlock Text="PowerShell script"/><TextBox x:Name="CommandScript" AcceptsReturn="True" Height="135" MaxLength="8192" FontFamily="Cascadia Mono, Consolas" VerticalScrollBarVisibility="Auto" Margin="0,6,0,12" AutomationProperties.Name="Saved PowerShell script"/>
+       <TextBlock Text="Run In (empty = home; ~ is supported)"/><TextBox x:Name="CommandFolder" Margin="0,6,0,12" AutomationProperties.Name="Saved command folder"/>
+       <TextBlock Text="Arguments (up to 3; read $args[0..2])" Margin="0,4,0,6"/>
+       <Grid Margin="0,0,0,5"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBox x:Name="CommandArg1" MaxLength="80" AutomationProperties.Name="Argument 1 name"/><CheckBox x:Name="CommandArgOptional1" Grid.Column="1" Content="Optional" VerticalAlignment="Center" Margin="8,0,0,0"/></Grid>
+       <Grid Margin="0,0,0,5"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBox x:Name="CommandArg2" MaxLength="80" AutomationProperties.Name="Argument 2 name"/><CheckBox x:Name="CommandArgOptional2" Grid.Column="1" Content="Optional" VerticalAlignment="Center" Margin="8,0,0,0"/></Grid>
+       <Grid Margin="0,0,0,12"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBox x:Name="CommandArg3" MaxLength="80" AutomationProperties.Name="Argument 3 name"/><CheckBox x:Name="CommandArgOptional3" Grid.Column="1" Content="Optional" VerticalAlignment="Center" Margin="8,0,0,0"/></Grid>
+       <CheckBox x:Name="CommandProfile" Content="Load PowerShell profile" Margin="0,6"/>
+       <CheckBox x:Name="CommandEnabled" Content="Enabled" Margin="0,6"/>
+       <WrapPanel Margin="0,12,0,0"><Button Content="Save command" Click="SaveCommand" Padding="12,7" Margin="0,0,8,0"/><Button Content="Delete command" Click="DeleteCommand" Padding="12,7"/></WrapPanel>
+      </StackPanel></ScrollViewer>
+     </Grid>
+     <TextBlock x:Name="CommandStatus" Grid.Row="2" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,12,0,0" Text="Library edits apply immediately. Selecting another command discards unsaved editor changes. Feature switches apply on Save changes."/>
+    </Grid>
+   </TabItem>
+   <TabItem Header="Applications">
+    <ScrollViewer x:Name="ApplicationSettingsScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><Grid Margin="0,0,8,12"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+     <StackPanel>
+      <CheckBox x:Name="IncludePackagedApps" Content="Include Store / packaged applications (AppsFolder and AUMID)" FontSize="15"/>
+      <TextBlock Text="Current-user registered packages only; no host EXE guessing, package-directory scan or application execution during indexing. Applies on Save." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,5,0,12"/>
+      <CheckBox x:Name="IncludeAppPaths" Content="Include local applications registered with Windows (App Paths)" FontSize="15"/>
+      <TextBlock Text="Reads only bounded user/machine EXE registrations; deduplicates actual shortcut targets. No remote registry, PATH/argument collection or automatic execution. Applies on Save." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,10"/>
+      <CheckBox x:Name="DiscoverApps" Content="Automatically discover desktop EXEs I run" FontSize="15"/>
+      <TextBlock Text="Uses foreground/window-show events while Kikicast is running. No process polling, disk-wide scan, private launch history, window titles, command lines or keystrokes." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,6"/>
+      <TextBlock Text="Start-menu targets are excluded: no shortcut + EXE duplicates. Deleting an EXE removes it from search. Disabling discovery keeps saved entries. Console/background-only tools are not automatically discovered." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+      <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="10" Padding="12" Margin="0,0,0,12"><StackPanel>
+       <TextBlock Text="Additional local application folders" FontWeight="SemiBold"/>
+       <TextBlock Text="EXEs / shortcuts in these folders, to the selected child depth (default 1). Max 32 folders / 20,000 inspected items; no network drives, drive roots, hidden/system items or linked-folder traversal. Applies on Save; application master switch gates indexing and search." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,6"/>
+       <StackPanel Orientation="Horizontal" Margin="0,0,0,8"><TextBlock Text="Child-folder depth" VerticalAlignment="Center" Margin="0,0,12,0"/><ComboBox x:Name="FolderDepth" Width="180" InputMethod.IsInputMethodEnabled="False" AutomationProperties.Name="Application folder depth"><ComboBoxItem Content="0 · this folder only"/><ComboBoxItem Content="1 · default"/><ComboBoxItem Content="2 child levels"/><ComboBoxItem Content="3 child levels"/></ComboBox></StackPanel>
+       <WrapPanel><Button Content="Add folder…" Click="AddApplicationFolder" Margin="0,0,8,6"/><Button Content="Remove selected folder" Click="RemoveApplicationFolder" Margin="0,0,0,6"/></WrapPanel>
+       <ListBox x:Name="FolderScopes" Height="60" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource ForegroundBrush}" AutomationProperties.Name="Application search folders"/>
+      </StackPanel></Border>
+     </StackPanel>
+     <WrapPanel Grid.Row="1">
+      <Button Content="Scan running apps" Click="ScanApps" Padding="12,7" Margin="0,0,8,8"/>
+      <Button Content="Add EXE…" Click="AddExe" Padding="12,7" Margin="0,0,8,8"/>
+      <Button Content="Refresh application index" Click="RefreshStartMenu" Padding="12,7" Margin="0,0,8,8"/>
+     </WrapPanel>
+     <TextBlock x:Name="AppStatus" Grid.Row="2" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,4,0,10"/>
+     <ListBox x:Name="DiscoveredApps" Grid.Row="3" MaxHeight="230" Background="Transparent" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Hidden" HorizontalContentAlignment="Stretch">
+      <ListBox.ItemTemplate><DataTemplate><Border Background="{DynamicResource SurfaceBrush}" CornerRadius="10" Padding="12" Margin="0,3"><DockPanel>
+       <Button DockPanel.Dock="Right" Content="Forget" Tag="{Binding Path}" Click="ForgetExe" Padding="10,6" Margin="12,0,0,0"/>
+       <StackPanel><TextBlock Text="{Binding Name}"/><TextBlock Text="{Binding Path}" Foreground="{DynamicResource MutedBrush}" TextTrimming="CharacterEllipsis" FontSize="11" Margin="0,4,0,0"/></StackPanel>
+      </DockPanel></Border></DataTemplate></ListBox.ItemTemplate>
+     </ListBox>
+    </Grid></ScrollViewer>
+   </TabItem>
+   <TabItem Header="Window management">
+    <ScrollViewer x:Name="WindowSettingsScroll" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" Focusable="True"><StackPanel Margin="0,0,4,12">
+     <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="18" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,18">
+      <StackPanel>
+       <CheckBox x:Name="WindowManagement" Content="Enable window management" FontSize="15"/>
+       <TextBlock Text="When disabled, search entries and window shortcuts stop working, but their configuration is kept." Foreground="{DynamicResource MutedBrush}" Margin="0,3,0,12" TextWrapping="Wrap"/>
+       <CheckBox x:Name="ShowWindows" Content="Show window commands in the launcher (shortcuts still work)" Margin="0,0,0,12"/>
+       <StackPanel Orientation="Horizontal"><TextBlock Text="Window gap" VerticalAlignment="Center"/><TextBox x:Name="WindowGap" Width="74" Margin="12,0,8,0" AutomationProperties.Name="Window gap"/><TextBlock Text="DIP · 0–100" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"/></StackPanel>
+       <StackPanel Orientation="Horizontal" Margin="0,12,0,0"><TextBlock Text="Repeat half action" VerticalAlignment="Center"/>
+        <ComboBox x:Name="HalfCycleSelector" Width="210" Margin="12,0,0,0" AutomationProperties.Name="Half action repeat mode" InputMethod.IsInputMethodEnabled="False"><ComboBoxItem Content="None (same half)"/><ComboBoxItem Content="Sizes: ½ → ⅓ → ⅔"/><ComboBoxItem Content="Displays (half-slot strip)"/></ComboBox>
+       </StackPanel>
+       <TextBlock Text="Displays: Left/Top walk backwards; Right/Bottom forwards. Each display contributes two half-slots. One display keeps the same half. Modes are exclusive." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+      </StackPanel>
+     </Border>
+     <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,18">
+      <StackPanel>
+       <TextBlock Text="Window layouts" FontSize="18" FontWeight="SemiBold"/>
+       <TextBlock Text="Edit a preview or capture known open windows. Keep layout draft, then Save changes to persist it with shortcuts. Missing apps/displays are skipped: launching missing apps and opening documents are not implemented yet." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,12"/>
+       <CheckBox x:Name="ShowLayouts" Content="Show window layouts in the launcher (shortcuts still work)" Margin="0,0,0,8"/>
+       <ListBox x:Name="LayoutList" DisplayMemberPath="Name" ItemContainerStyle="{StaticResource LayoutListItemStyle}" MaxHeight="120" MinHeight="38" Background="Transparent" BorderThickness="0" AutomationProperties.Name="Saved window layouts"/>
+       <WrapPanel Margin="0,8,0,0"><Button Content="New layout" Click="NewLayout"/><Button Content="Edit preview" Click="EditLayout" Margin="8,0,0,0"/><Button Content="Capture open windows" Click="CaptureLayout" Margin="8,0,0,0"/><Button Content="Duplicate" Click="DuplicateLayout" Margin="8,0,0,0"/><Button Content="Delete" Click="DeleteLayout" Margin="8,0,0,0"/></WrapPanel>
+       <Button Content="Apply saved layout…" Click="ApplySavedLayout" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+       <TextBlock x:Name="LayoutStatus" Text="Both saved master gates must be enabled to capture/apply. Preview never moves windows. Apply saved layout closes settings after default-No confirmation; unapplied drafts are discarded." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+      </StackPanel>
+     </Border>
+     <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,18">
+      <StackPanel>
+       <TextBlock Text="Custom sizes" FontSize="18" FontWeight="SemiBold"/>
+       <TextBlock Text="Keep size draft, then Save changes to apply sizes and shortcuts together. Closing discards unapplied drafts. Percentages use the window's display, minus the gap; fixed sizes and offsets use DIP." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,12"/>
+       <ListBox x:Name="CustomSizeList" DisplayMemberPath="Name" MaxHeight="130" MinHeight="36" Background="Transparent" BorderThickness="0" SelectionChanged="CustomSizeSelected" HorizontalContentAlignment="Stretch">
+        <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem">
+         <Setter Property="Foreground" Value="{DynamicResource ForegroundBrush}"/>
+         <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem"><Border x:Name="SizeRow" CornerRadius="7" Padding="8,6" Margin="0,2"><ContentPresenter/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="SizeRow" Property="Background" Value="{DynamicResource PaletteSelectionBrush}"/></Trigger><Trigger Property="IsSelected" Value="True"><Setter TargetName="SizeRow" Property="Background" Value="{DynamicResource AccentSoftBrush}"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
+        </Style></ListBox.ItemContainerStyle>
+       </ListBox>
+       <WrapPanel Margin="0,8,0,10"><Button x:Name="NewSizeButton" Content="New size" Click="NewCustomSize" Padding="12,6" Margin="0,0,8,0"/><Button x:Name="DeleteSizeButton" Content="Delete selected draft" Click="DeleteCustomSize" Padding="12,6"/></WrapPanel>
+       <TextBlock Text="Name" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,5"/>
+       <TextBox x:Name="SizeName" MaxLength="120" AutomationProperties.Name="Custom size name" Margin="0,0,0,10"/>
+       <WrapPanel>
+        <TextBlock Text="Width" VerticalAlignment="Center"/><TextBox x:Name="SizeWidth" Width="70" AutomationProperties.Name="Custom size width" Margin="8,0"/>
+        <ComboBox x:Name="SizeWidthUnit" Width="82" AutomationProperties.Name="Custom size width unit" SelectedIndex="1" SelectionChanged="SizeUnitChanged" InputMethod.IsInputMethodEnabled="False"><ComboBoxItem Content="DIP"/><ComboBoxItem Content="%"/></ComboBox>
+        <TextBlock Text="Height" VerticalAlignment="Center" Margin="16,0,0,0"/><TextBox x:Name="SizeHeight" Width="70" AutomationProperties.Name="Custom size height" Margin="8,0"/>
+        <ComboBox x:Name="SizeHeightUnit" Width="82" AutomationProperties.Name="Custom size height unit" SelectedIndex="1" SelectionChanged="SizeUnitChanged" InputMethod.IsInputMethodEnabled="False"><ComboBoxItem Content="DIP"/><ComboBoxItem Content="%"/></ComboBox>
+       </WrapPanel>
+       <WrapPanel Margin="0,10,0,10">
+        <TextBlock Text="Anchor" VerticalAlignment="Center"/><ComboBox x:Name="SizeAnchor" Width="126" Margin="8,0,16,0" AutomationProperties.Name="Custom size anchor" InputMethod.IsInputMethodEnabled="False"/>
+        <TextBlock Text="Offset X / Y" VerticalAlignment="Center"/><TextBox x:Name="SizeOffsetX" Width="60" Margin="8,0" AutomationProperties.Name="Custom size X offset"/><TextBox x:Name="SizeOffsetY" Width="60" AutomationProperties.Name="Custom size Y offset"/>
+       </WrapPanel>
+       <CheckBox x:Name="SizeEnabled" Content="Enabled (disabled sizes keep their shortcuts)" Margin="0,0,0,10"/>
+       <Button x:Name="KeepSizeButton" Content="Keep size draft" Click="KeepCustomSize" HorizontalAlignment="Left" Padding="12,7"/>
+       <TextBlock x:Name="SizeStatus" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+      </StackPanel>
+     </Border>
+     <TextBlock Text="Shortcuts for each action" FontSize="18" FontWeight="SemiBold"/>
+     <TextBlock Text="All are unbound by default. Click a row to record it. No preset is applied automatically." Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,12" TextWrapping="Wrap"/>
+     <ItemsControl x:Name="WindowBindings" ItemTemplate="{StaticResource BindingRowTemplate}">
+      <ItemsControl.GroupStyle><GroupStyle><GroupStyle.HeaderTemplate><DataTemplate><TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" Margin="2,14,0,5"/></DataTemplate></GroupStyle.HeaderTemplate></GroupStyle></ItemsControl.GroupStyle>
+     </ItemsControl>
+    </StackPanel></ScrollViewer>
+   </TabItem>
+  </TabControl>
+  <Border Grid.Row="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,14,0,0" Margin="0,14,0,0">
+   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <StackPanel Margin="0,0,18,0">
+     <TextBlock x:Name="Feedback" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Text="Click a shortcut to record it. Global shortcuts pause while settings are open."/>
+     <StackPanel x:Name="RecorderOptions" Orientation="Horizontal" Visibility="Collapsed" Margin="0,8,0,0">
+      <CheckBox x:Name="DistinguishSide" Content="Distinguish left and right modifiers" Margin="0,0,14,0" VerticalAlignment="Center"/>
+      <Button Content="Cancel recording" Click="CancelRecording" Padding="10,4"/>
+     </StackPanel>
+    </StackPanel>
+    <Button x:Name="SaveButton" Grid.Column="1" Content="Save changes" Padding="22,10" VerticalAlignment="Bottom" Click="Save" Background="{DynamicResource AccentSoftBrush}" BorderBrush="{DynamicResource FocusBorderBrush}"/>
+   </Grid>
+  </Border>
+ </Grid>
+</Window>

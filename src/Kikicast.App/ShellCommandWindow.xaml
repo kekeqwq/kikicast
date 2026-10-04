@@ -1,0 +1,15 @@
+<Window x:Class="Kikicast.App.ShellCommandWindow"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Title="Run Shell Command — Kikicast" Icon="Assets/kikicast.ico" Width="720" Height="420" MinWidth="580" MinHeight="360"
+ Background="{DynamicResource WindowBrush}" Foreground="{DynamicResource ForegroundBrush}" PreviewKeyDown="HandleKey">
+ <Grid Margin="24"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <StackPanel><TextBlock Text="Run Shell Command" FontSize="24"/><TextBlock Text="Enter runs immediately in your system terminal. Interactive input, colors and Ctrl+C are supported." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,12"/></StackPanel>
+  <TextBox x:Name="Script" Grid.Row="1" AcceptsReturn="True" MaxLength="8192" VerticalScrollBarVisibility="Auto" FontFamily="Cascadia Mono, Consolas" Padding="10" Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource ForegroundBrush}" AutomationProperties.Name="PowerShell command"/>
+  <StackPanel Grid.Row="2" Margin="0,12"><DockPanel><TextBlock Text="Run In" Margin="0,0,12,0" VerticalAlignment="Center"/><TextBox x:Name="Folder" Padding="6" Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource ForegroundBrush}" AutomationProperties.Name="Working directory"/></DockPanel>
+   <CheckBox x:Name="LoadProfile" IsChecked="True" Content="Load PowerShell profile" Margin="0,10,0,0"/>
+  </StackPanel>
+  <DockPanel Grid.Row="3" Margin="0,8,0,0"><Button DockPanel.Dock="Right" Content="Run · Enter" Click="RunCommand" Padding="16,8"/>
+   <TextBlock x:Name="Status" Text="Shift+Enter inserts a newline · Escape closes" VerticalAlignment="Center" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,8,0"/>
+  </DockPanel>
+ </Grid>
+</Window>

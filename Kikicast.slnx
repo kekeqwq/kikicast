@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Kikicast.App/Kikicast.App.csproj" />
+    <Project Path="src/Kikicast.Core/Kikicast.Core.csproj" />
+    <Project Path="src/Kikicast.Windows/Kikicast.Windows.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Kikicast.Core.Tests/Kikicast.Core.Tests.csproj" />
+    <Project Path="tests/Kikicast.Discovery.Fixture/Kikicast.Discovery.Fixture.csproj" />
+    <Project Path="tests/Kikicast.Windows.Tests/Kikicast.Windows.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Kikicast.Search.Benchmark/Kikicast.Search.Benchmark.csproj" />
+    <Project Path="tools/Kikicast.Native.Acceptance/Kikicast.Native.Acceptance.csproj" />
+  </Folder>
+</Solution>
