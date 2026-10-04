@@ -11,6 +11,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot 'release-functions.ps1')
 $repo = Split-Path $PSScriptRoot -Parent
 if (-not $Destination) { $Destination = Join-Path $repo 'artifacts/releases' }
 if ($Version -notmatch '^\d+\.\d+\.\d+(?:-[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*)?$') { throw 'Use a safe semantic version.' }
@@ -129,7 +130,7 @@ try {
     }
     foreach ($required in @('LICENSE','NOTICE.md','licenses/TinyPinyin.Net.LICENSE','licenses/TinyPinyin.Apache-2.0.LICENSE','licenses/Microsoft.NETCore.App.LICENSE.txt','licenses/Microsoft.NETCore.App.ThirdPartyNotices.txt','licenses/Microsoft.WindowsDesktop.App.LICENSE.txt','coreclr.dll','Kikicast.App.exe')) { if (-not (Test-Path (Join-Path $publish $required))) { throw "Missing payload/license: $required" } }
     if (@(Get-ChildItem $publish -Recurse -File | Where-Object { $_.Name -match 'PortableFixture|\.Tests\.|\.pdb$|settings\.json|commands\.json|discovered-apps\.json' -or ($_.Attributes -band [IO.FileAttributes]::ReparsePoint) }).Count) { throw 'Unexpected test/debug/user-data/linked payload file.' }
-    $files = @(Get-ChildItem $publish -Recurse -File | Sort-Object FullName | ForEach-Object { @{ path=$_.FullName.Substring($publish.Length+1); sha256=(Get-FileHash $_.FullName -Algorithm SHA256).Hash; bytes=$_.Length } })
+    $files = @(Get-ChildItem $publish -Recurse -File | Sort-Object FullName | ForEach-Object { @{ path=$_.FullName.Substring($publish.Length+1); sha256=(Get-KikicastSHA256 $_.FullName); bytes=$_.Length } })
     @{ version=$Version; sourceRevision=$sourceRevision; runtime=$Runtime; selfContained=$true; preview=[bool]$Preview; sourceHost=$native; publishedValidation=$(if ($emulated) {'emulated-x64-on-arm64'} else {'native-arm64-or-x64'}); files=$files } | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $publish 'package-manifest.json') -Encoding UTF8
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repo 'scripts/test-installer.ps1') -PayloadDirectory $publish -InnoCompiler $InnoCompiler -Version $Version -Runtime $Runtime -EvidenceDirectory (Join-Path $work 'evidence/installer')
     if ($LASTEXITCODE -ne 0) { throw 'Owned install/upgrade/uninstall test failed; no installer published.' }
@@ -146,7 +147,7 @@ try {
     if (Test-Path $evidence) { throw 'Existing package evidence is never overwritten.' }
     Copy-Item (Join-Path $work 'evidence') $evidence -Recurse
     Copy-Item (Join-Path $publish 'package-manifest.json') ($final + '.json')
-    $hash = (Get-FileHash $setup -Algorithm SHA256).Hash
+    $hash = Get-KikicastSHA256 $setup
     [IO.File]::WriteAllText(($final + '.sha256'), "$hash  $name`r`n")
     [IO.File]::Move($setup, $final) # atomic final name; never overwrite
     $completed = $true

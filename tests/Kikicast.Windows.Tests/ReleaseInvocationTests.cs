@@ -64,7 +64,7 @@ public sealed class ReleaseInvocationTests
         if (!OperatingSystem.IsWindows()) return;
         var info = new ProcessStartInfo("powershell.exe") { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
         info.Environment["KIKICAST_PARSER_SCRIPTS"] = Path.Combine(AppContext.BaseDirectory, "scripts");
-        foreach (var arg in new[] { "-NoProfile", "-Command", "foreach($p in @('package-release.ps1','test-installer.ps1')){$t=$null;$e=$null;[void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $env:KIKICAST_PARSER_SCRIPTS $p),[ref]$t,[ref]$e);if($e.Count){throw ($e|Out-String)}}" }) info.ArgumentList.Add(arg);
+        foreach (var arg in new[] { "-NoProfile", "-Command", "foreach($p in @('package-release.ps1','test-installer.ps1','release-functions.ps1')){$t=$null;$e=$null;[void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $env:KIKICAST_PARSER_SCRIPTS $p),[ref]$t,[ref]$e);if($e.Count){throw ($e|Out-String)}}" }) info.ArgumentList.Add(arg);
         using var process = Process.Start(info)!; var error = process.StandardError.ReadToEndAsync(); await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(20)); Assert.True(process.ExitCode == 0, await error);
     }
 }

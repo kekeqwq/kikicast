@@ -7,6 +7,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot 'release-functions.ps1')
 $repo = Split-Path $PSScriptRoot -Parent
 if (-not [IO.Path]::IsPathRooted($PayloadDirectory) -or -not (Test-Path (Join-Path $PayloadDirectory 'package-manifest.json'))) { throw 'A complete absolute staged payload is required.' }
 if (Test-Path $EvidenceDirectory) { throw 'Installer evidence must be a new directory.' }
@@ -50,7 +51,7 @@ try {
     } finally { [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) }
     $manifest = Get-Content (Join-Path $PayloadDirectory 'package-manifest.json') -Raw | ConvertFrom-Json
     foreach ($file in $manifest.files) {
-        if ((Get-FileHash -LiteralPath (Join-Path $app $file.path) -Algorithm SHA256).Hash -ne $file.sha256) { throw 'Installed payload hash mismatch.' }
+        if ((Get-KikicastSHA256 (Join-Path $app $file.path)) -ne $file.sha256) { throw 'Installed payload hash mismatch.' }
     }
     # Installed binary, random smoke mutex/profile only. No real user app launch.
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repo 'scripts/smoke-test.ps1') -ExePath (Join-Path $app 'Kikicast.App.exe') -TrayOnly

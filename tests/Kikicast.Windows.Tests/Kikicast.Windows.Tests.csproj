@@ -20,6 +20,7 @@
     <None Include="../../src/Kikicast.App/Assets/kikicast.ico" Link="icon-fixture.ico" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../scripts/smoke-test.ps1" Link="smoke-test.ps1" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../scripts/package-release.ps1" Link="scripts/package-release.ps1" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../scripts/release-functions.ps1" Link="scripts/release-functions.ps1" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../scripts/test-installer.ps1" Link="scripts/test-installer.ps1" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../scripts/installer/Kikicast.iss" Link="scripts/installer/Kikicast.iss" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../docs/release-readiness.json" Link="docs/release-readiness.json" CopyToOutputDirectory="PreserveNewest" />
