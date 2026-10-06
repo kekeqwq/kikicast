@@ -59,6 +59,23 @@ public sealed class ReleaseInvocationTests
         Assert.DoesNotContain("\n[UninstallDelete]", recipe); Assert.DoesNotContain("\n[Registry]", recipe); Assert.DoesNotContain("taskkill", recipe, StringComparison.OrdinalIgnoreCase);
     }
     [Fact]
+    public void ReleaseNotesFollowRequestedVersionInsteadOfOldRelease()
+    {
+        var script = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "scripts", "package-release.ps1"));
+        Assert.Contains("'docs/releases/' + $Version + '.md'", script);
+        Assert.Contains("Copy-Item -LiteralPath $releaseNotes", script);
+        Assert.DoesNotContain("docs/releases/0.1.0-preview.1.md", script);
+    }
+    [Fact]
+    public void UninstallStartupCleanupIsExactOwnedCommandOnly()
+    {
+        var recipe = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "scripts", "installer", "Kikicast.iss"));
+        Assert.Contains("CurUninstallStep = usPostUninstall", recipe);
+        Assert.Contains("CompareText(RegisteredCommand, '\"' + ExpandConstant('{app}\\Kikicast.App.exe') + '\"') = 0", recipe);
+        Assert.Contains("RegDeleteValue(HKCU, '{#StartupRunKey}', '{#StartupRunName}')", recipe);
+        Assert.DoesNotContain("RegDeleteKeyIncludingSubkeys", recipe);
+    }
+    [Fact]
     public async Task PackageAndInstallerScriptsParseWithoutNativeOperations()
     {
         if (!OperatingSystem.IsWindows()) return;

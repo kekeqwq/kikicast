@@ -1,7 +1,7 @@
 param(
     [switch]$Preview,
     [ValidateSet('win-arm64', 'win-x64')][string]$Runtime = 'win-arm64',
-    [string]$Version = '0.1.0-preview.1',
+    [string]$Version = '0.2.0-preview.1',
     [string]$Destination,
     [string]$InnoCompiler,
     [switch]$CrossPublishPreview,
@@ -66,6 +66,8 @@ if (-not $InnoCompiler -or -not (Test-Path -LiteralPath $InnoCompiler)) { throw 
 if (-not [IO.Path]::IsPathRooted($Destination) -or $Destination.StartsWith('\\')) { throw 'Use an absolute local artifact directory.' }
 $sourceRevision = (& git -C $repo rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0 -or $sourceRevision -notmatch '^[0-9a-f]{40}$' -or @(git -C $repo status --porcelain).Count -gt 0) { throw 'Installer releases require a clean, committed source tree.' }
+$releaseNotes = Join-Path $repo ('docs/releases/' + $Version + '.md')
+if (-not (Test-Path -LiteralPath $releaseNotes)) { throw 'Matching version-specific release notes are required; never ship notes from another release.' }
 $final = Join-Path $Destination $name
 foreach ($file in @($final, ($final + '.sha256'), ($final + '.json'))) { if (Test-Path -LiteralPath $file) { throw 'Existing versioned artifacts are never overwritten; use another destination/version.' } }
 $work = Join-Path ([IO.Path]::GetTempPath()) ('KikicastPackage-' + [guid]::NewGuid().ToString('N'))
@@ -113,9 +115,9 @@ try {
     Get-ChildItem -LiteralPath $publish -Filter 'PortableFixture.*' | Remove-Item -Force
     Copy-Item -LiteralPath $readinessPath -Destination $publish
     Copy-Item -LiteralPath (Join-Path $repo 'docs/feature-settings-matrix.md') -Destination $publish
-    Copy-Item -LiteralPath (Join-Path $repo 'docs/releases/0.1.0-preview.1.md') -Destination (Join-Path $publish 'RELEASE-NOTES.md')
+    Copy-Item -LiteralPath $releaseNotes -Destination (Join-Path $publish 'RELEASE-NOTES.md')
     $label = if ($Preview) { 'PREVIEW: incomplete, unsigned; not a stable Tinycast-complete release.' } else { 'Stable release.' }
-    [IO.File]::WriteAllText((Join-Path $publish 'READ-ME-FIRST.txt'), "$label`r`nKikicast $Version / Windows 11 / $arch. .NET 10 Windows Desktop Runtime is bundled; no separate .NET installation required. PowerShell 7 is separately required only for Shell/custom commands.`r`nCurrent-user install: LocalAppData\Programs\Kikicast, Start menu and Apps uninstall entry. No elevation/autostart/file associations. Quit the tray app before updating or uninstalling; no running app is forcibly closed.`r`nNormal startup stays in tray; default activation is double Ctrl. Uninstall retains ~/.config/kikicast settings/history/commands. Both architecture installers use the same product identity; prefer aarch64 on ARM64 Windows.`r`nUnsigned preview may show Windows SmartScreen warnings; do not disable system protections. See RELEASE-NOTES.md/release-readiness.json for limitations. x64-on-ARM64 emulated validation is not native x64 acceptance.`r`nAGPL-3.0 source: https://github.com/kekeqwq/kikicast/tree/v$Version (commit $sourceRevision). Installer uses unmodified Inno Setup (https://jrsoftware.org/).")
+    [IO.File]::WriteAllText((Join-Path $publish 'READ-ME-FIRST.txt'), "$label`r`nKikicast $Version / Windows 11 / $arch. .NET 10 Windows Desktop Runtime is bundled; no separate .NET installation required. PowerShell 7 is separately required only for Shell/custom commands.`r`nCurrent-user install: LocalAppData\Programs\Kikicast, Start menu and Apps uninstall entry. No elevation/default autostart/file associations. Login startup is opt-in from General; extensions run only by explicit command. Quit the tray app before updating or uninstalling; no running app is forcibly closed.`r`nNormal startup stays in tray; default activation is double Ctrl. Uninstall retains ~/.config/kikicast settings/history/commands. Both architecture installers use the same product identity; prefer aarch64 on ARM64 Windows.`r`nUnsigned preview may show Windows SmartScreen warnings; do not disable system protections. See RELEASE-NOTES.md/release-readiness.json for limitations. x64-on-ARM64 emulated validation is not native x64 acceptance.`r`nAGPL-3.0 source: https://github.com/kekeqwq/kikicast/tree/v$Version (commit $sourceRevision). Installer uses unmodified Inno Setup (https://jrsoftware.org/).")
     # Runtime packs do not automatically publish their root license/notice files.
     # Read only the exact restored versions named by this self-contained payload.
     $packageRoot = (& dotnet msbuild (Join-Path $repo 'src/Kikicast.App/Kikicast.App.csproj') -getProperty:NuGetPackageRoot -nologo).Trim()

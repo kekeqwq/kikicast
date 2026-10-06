@@ -1,6 +1,6 @@
 # Windows/.NET extensions — 0.2 work
 
-0.1.0-preview.1 and its immutable installers remain published; this is unreleased 0.2 implementation, not stable acceptance.
+0.1.0-preview.1 and its immutable installers remain unchanged; 0.2.0-preview.1 is an unsigned/incomplete preview, not stable acceptance. Separate RandomWallpaper 0.1.0-preview.3 release assets/catalog target protocol 1 and minimum host 0.2.0.
 
 ## Contract
 

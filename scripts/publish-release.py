@@ -70,7 +70,7 @@ def upload(token, url, file):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", default="0.1.0-preview.1")
+    parser.add_argument("--version", default="0.2.0-preview.1")
     parser.add_argument("--artifacts", required=True, type=Path)
     parser.add_argument("--publish", action="store_true")
     args = parser.parse_args()
@@ -103,10 +103,14 @@ def main():
         for field in ["privateAppId", "identicalPayload", "perUserInstall", "startMenu", "sameIdentityUpgrade", "uninstall", "installedTraySmoke", "installedModelsSmoke"]:
             if not evidence[field]:
                 raise RuntimeError("Incomplete owned installer acceptance.")
+        if args.version.startswith("0.2.") and not all(evidence.get(field) for field in ["privateStartupRegistrationRemoved", "foreignStartupValueRetained", "noUserApplicationTerminated"]):
+            raise RuntimeError("Incomplete startup ownership/uninstall acceptance.")
         receipts.append({"asset": file.name, "runtime": runtime, "sha256": digest, "sourceRevision": source,
                          "validation": payload["publishedValidation"], "ownedInstallUpgradeUninstall": True,
                          "installerScope": "same payload/recipe, private identity/mutex/group; not unassisted real-profile acceptance",
-                         "signed": False, "nativeX64Accepted": False, "stableReadiness": False})
+                         "startupOwnedRemovalTested": bool(evidence.get("privateStartupRegistrationRemoved")),
+                         "foreignStartupPreservedTested": bool(evidence.get("foreignStartupValueRetained")),
+                         "realSignInAccepted": False, "signed": False, "nativeX64Accepted": False, "stableReadiness": False})
         installers.append(file)
     if not args.publish:
         print("PASS: local source/tag/dual setup/manifest/checksum/owned installer validation only; no metadata overwrite or GitHub release created.")
