@@ -150,10 +150,27 @@ public partial class App : System.Windows.Application
         {
             try
             {
-                await palette.VerifyLauncherSectionsAsync(); await palette.VerifyFeatureSettingsAsync(); await palette.VerifyCategoryIconsAsync(evidenceDirectory);
-                await palette.VerifyLauncherActionsAsync(verifyFocus: false); await palette.VerifyArgumentFieldsAsync();
-                await palette.VerifyApplicationFolderSettingsAsync(); await palette.VerifySearchRankingAsync(); await palette.VerifyEntryBindingModelsAsync(); await palette.VerifyPackagedApplicationsAsync(evidenceDirectory); await palette.VerifyCustomWindowSizeModelsAsync(evidenceDirectory); await palette.VerifyLayoutModelsAsync();
+                var modelWatch = System.Diagnostics.Stopwatch.StartNew();
+                async Task Model(string name, Func<Task> probe)
+                {
+                    Console.Error.WriteLine($"Owned model {name} begin {modelWatch.ElapsedMilliseconds}ms");
+                    await probe();
+                    Console.Error.WriteLine($"Owned model {name} end {modelWatch.ElapsedMilliseconds}ms");
+                }
+                await Model("sections", palette.VerifyLauncherSectionsAsync);
+                await Model("features", palette.VerifyFeatureSettingsAsync);
+                await Model("icons", () => palette.VerifyCategoryIconsAsync(evidenceDirectory));
+                await Model("actions", () => palette.VerifyLauncherActionsAsync(verifyFocus: false));
+                await Model("arguments", palette.VerifyArgumentFieldsAsync);
+                await Model("folders", palette.VerifyApplicationFolderSettingsAsync);
+                await Model("ranking", palette.VerifySearchRankingAsync);
+                await Model("bindings", palette.VerifyEntryBindingModelsAsync);
+                await Model("packages", () => palette.VerifyPackagedApplicationsAsync(evidenceDirectory));
+                await Model("sizes", () => palette.VerifyCustomWindowSizeModelsAsync(evidenceDirectory));
+                await Model("layouts", palette.VerifyLayoutModelsAsync);
+                Console.Error.WriteLine($"Owned model settings begin {modelWatch.ElapsedMilliseconds}ms");
                 ShowSettings("Launcher"); // Validate actual category/binding rows without requiring palette activation.
+                Console.Error.WriteLine($"Owned model settings end {modelWatch.ElapsedMilliseconds}ms");
                 var modelTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
                 modelTimer.Tick += (_, _) => { modelTimer.Stop(); Shutdown(); }; modelTimer.Start();
             }

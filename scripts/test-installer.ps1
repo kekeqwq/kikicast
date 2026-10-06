@@ -79,7 +79,7 @@ try {
     # Installed binary, random smoke mutex/profile only. No real user app launch.
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repo 'scripts/smoke-test.ps1') -ExePath (Join-Path $app 'Kikicast.App.exe') -TrayOnly
     if ($LASTEXITCODE -ne 0) { throw 'Installed apphost tray smoke failed.' }
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repo 'scripts/smoke-test.ps1') -ExePath (Join-Path $app 'Kikicast.App.exe') -ModelsOnly
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repo 'scripts/smoke-test.ps1') -ExePath (Join-Path $app 'Kikicast.App.exe') -ModelsOnly -EvidenceDirectory (Join-Path $EvidenceDirectory 'installed-models')
     if ($LASTEXITCODE -ne 0) { throw 'Installed apphost model smoke failed.' }
     # Same-ID reinstall exercises upgrade path and keeps one shortcut/registration.
     Run-OwnedInstaller $setup @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',('/LOG="' + (Join-Path $EvidenceDirectory 'upgrade.log') + '"'))

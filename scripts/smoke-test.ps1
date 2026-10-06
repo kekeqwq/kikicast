@@ -82,6 +82,12 @@ try {
     elseif ($TrayOnly) { Write-Output 'PASS: startup stays hidden in tray and shuts down normally.' }
     else { Write-Output 'PASS: English-only palette / categorized settings visible, normal shutdown.' }
     if ($AutomateInput) { Write-Output "Evidence: $([IO.Path]::GetFullPath($EvidenceDirectory))" }
+} catch {
+    if ($EvidenceDirectory -and (Test-Path $report)) {
+        [void](New-Item -ItemType Directory -Path $EvidenceDirectory -Force)
+        Copy-Item -LiteralPath $report -Destination (Join-Path $EvidenceDirectory 'smoke-report.txt') -Force
+    }
+    throw
 } finally {
     if ($null -ne $p) {
         if (-not $p.HasExited) { Stop-Process -Id $p.Id; $p.WaitForExit() }
