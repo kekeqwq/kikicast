@@ -30,6 +30,27 @@ function Run-OwnedInstaller([string]$exe, [string[]]$arguments) {
         if (-not $p.WaitForExit(120000)) { throw 'Owned installer did not exit within 120 seconds; no process is terminated.' }
         $p.WaitForExit()
         if ($p.ExitCode -ne 0) { throw "Owned installer failed with exit $($p.ExitCode)." }
+        # Inno's original uninstaller signals its parent before post-uninstall
+        # callbacks in the temporary second phase finish. Await the owned final
+        # log, not just file removal/first-phase exit; never retry the operation.
+        $logArgument = @($arguments | Where-Object { $_.StartsWith('/LOG="', [StringComparison]::OrdinalIgnoreCase) })
+        if ($logArgument.Count -eq 1) {
+            $log = $logArgument[0].Substring(6).TrimEnd('"')
+            $watch = [Diagnostics.Stopwatch]::StartNew(); $closed = $false
+            while ($watch.ElapsedMilliseconds -lt 120000 -and -not $closed) {
+                if (Test-Path -LiteralPath $log) {
+                    $stream = [IO.File]::Open($log, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::ReadWrite)
+                    try {
+                        if ($stream.Length -gt 1048576) { throw 'Oversized owned installer completion log.' }
+                        $reader = New-Object IO.StreamReader($stream)
+                        try { $closed = $reader.ReadToEnd().TrimEnd().EndsWith('Log closed.', [StringComparison]::Ordinal) }
+                        finally { $reader.Dispose() }
+                    } finally { $stream.Dispose() }
+                }
+                if (-not $closed) { Start-Sleep -Milliseconds 50 }
+            }
+            if (-not $closed) { throw 'Owned installer final phase did not complete; no process is terminated.' }
+        }
     } finally { $p.Dispose() }
 }
 try {
@@ -72,7 +93,7 @@ try {
     # A foreign command in the same private slot must survive uninstall.
     Run-OwnedInstaller $setup $args; $installed = $true
     [void](New-ItemProperty -LiteralPath $ownedStartupRegistry -Name 'Owned' -Value 'foreign-owned-marker' -PropertyType String -Force)
-    Run-OwnedInstaller (Join-Path $app 'unins000.exe') @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART'); $installed = $false
+    Run-OwnedInstaller (Join-Path $app 'unins000.exe') @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/LOG="' + (Join-Path $EvidenceDirectory 'foreign-uninstall.log') + '"')); $installed = $false
     if ((Get-ItemPropertyValue -LiteralPath $ownedStartupRegistry -Name 'Owned') -ne 'foreign-owned-marker') { throw 'Uninstall removed a foreign startup value.' }
     @{ privateStartupRegistrationRemoved=$true; foreignStartupValueRetained=$true; realStartupRegistered=$false; runtime=$Runtime; privateAppId=$true; identicalPayload=$true; perUserInstall=$true; startMenu=$true; installedTraySmoke=$true; installedModelsSmoke=$true; sameIdentityUpgrade=$true; uninstall=$true; externalGeneratedMarkerRetained=$true; noUserApplicationTerminated=$true; scope='Same installer recipe/payload, private GUID/mutex/group/temp directory; not unassisted real-profile/native-x64 acceptance.' } | ConvertTo-Json | Set-Content (Join-Path $EvidenceDirectory 'installer-evidence.json') -Encoding UTF8
     $passed = $true
@@ -81,7 +102,7 @@ try {
     if ($installed -and (Test-Path $registry)) {
         $registration = Get-ItemProperty -LiteralPath $registry
         if ($registration.InstallLocation.TrimEnd('\') -eq $app -and (Test-Path (Join-Path $app 'unins000.exe'))) {
-            Run-OwnedInstaller (Join-Path $app 'unins000.exe') @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
+            Run-OwnedInstaller (Join-Path $app 'unins000.exe') @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/LOG="' + (Join-Path $EvidenceDirectory 'failed-cleanup-uninstall.log') + '"'))
         }
     }
     if ($passed) { Remove-Item -LiteralPath $ownedStartupRegistry -Force; Remove-Item -LiteralPath $work -Recurse -Force }

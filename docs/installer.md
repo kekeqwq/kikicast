@@ -10,6 +10,10 @@
 - Uninstall removes recorded installed files/links/uninstall registration only. No wildcard UninstallDelete, home-data deletion, profile migration, process enumeration/termination or user-app activation. User-created unknown files are not swept. Settings/history/commands remain in home configuration.
 - Preview is visibly incomplete and unsigned, with checksums/source link/licenses/runtime notices. It is not signing/native x64/final acceptance. Stable gating remains unchanged: pending portable/native/security/signing checks refuse.
 
+## 0.2 retained installer-harness correction
+
+The first 0.2 ARM64 package attempt passed source/published smokes but refused publication when the test observed its private startup value before Inno's temporary second-phase post-uninstall callback completed. Bounded read-only checks later found the exact private value removed; the owned uninstall log ended later. Production exact-command cleanup was not loosened. The fixture now awaits its owned final `Log closed.` receipt (bounded read, no repeated operation/process termination) before checking removal/foreign retention. A fresh independent installer run passed; full packaging still must pass. Raw first failure remains local, not reclassified as success.
+
 ## Reproduce
 
 Use a verified compiler from https://github.com/jrsoftware/issrc/releases/tag/is-7_1_0 (vendor installer SHA-256 `0362a383ed217d4c4239b5933866dd96d3eb2102737da92f80f6057a4b40df2f`, valid vendor Authenticode observed on this ARM64 host). Compiler is a development tool, never bundled in Kikicast.

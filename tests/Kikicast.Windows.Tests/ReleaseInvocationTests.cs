@@ -74,6 +74,10 @@ public sealed class ReleaseInvocationTests
         Assert.Contains("CompareText(RegisteredCommand, '\"' + ExpandConstant('{app}\\Kikicast.App.exe') + '\"') = 0", recipe);
         Assert.Contains("RegDeleteValue(HKCU, '{#StartupRunKey}', '{#StartupRunName}')", recipe);
         Assert.DoesNotContain("RegDeleteKeyIncludingSubkeys", recipe);
+        var script = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "scripts", "test-installer.ps1"));
+        Assert.Contains("EndsWith('Log closed.'", script);
+        Assert.Contains("foreign-uninstall.log", script);
+        Assert.Contains("Owned installer final phase did not complete; no process is terminated.", script);
     }
     [Fact]
     public async Task PackageAndInstallerScriptsParseWithoutNativeOperations()
