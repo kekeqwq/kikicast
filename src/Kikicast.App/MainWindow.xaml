@@ -5,7 +5,7 @@
  xmlns:core="clr-namespace:Kikicast.Core;assembly=Kikicast.Core"
  Title="Kikicast" Icon="Assets/kikicast.ico" Width="740" Height="520" WindowStyle="None" ResizeMode="NoResize"
  AllowsTransparency="True" Background="Transparent" Foreground="{DynamicResource ForegroundBrush}" ShowInTaskbar="False" Topmost="True"
- ShowActivated="False" InputMethod.IsInputMethodEnabled="False" PreviewKeyDown="HandleKey"
+ ShowActivated="False" InputMethod.IsInputMethodEnabled="False" PreviewKeyDown="HandleKey" PreviewKeyUp="ReleaseKey"
  PreviewMouseDown="PaletteMouseDown" Deactivated="HandleDeactivate">
  <Window.Resources>
   <local:ApplicationIconConverter x:Key="ApplicationIconConverter"/>

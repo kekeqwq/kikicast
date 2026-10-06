@@ -69,7 +69,7 @@ public partial class MainWindow
         ActionPanel.Visibility = Visibility.Collapsed; actionRow = null; actionSnapshot = [];
         if (focus && IsVisible) Query.Focus();
     }
-    private bool HandleActionKey(System.Windows.Input.KeyEventArgs e, ModifierKeys modifiers)
+    private bool HandleActionKey(System.Windows.Input.KeyEventArgs e, ModifierKeys modifiers, bool repeat)
     {
         if (ActionPanel.Visibility != Visibility.Visible) return false;
         if (e.Key == Key.Escape || modifiers == ModifierKeys.Control && e.Key == Key.K)
@@ -83,7 +83,7 @@ public partial class MainWindow
         {
             e.Handled = true;
             var action = actionSnapshot.FirstOrDefault(x => x.Kind == shortcut);
-            if (action != null && !e.IsRepeat) { ActionFilter.Clear(); ActionList.SelectedItem = action; RunSelectedAction(); }
+            if (action != null && !repeat) { ActionFilter.Clear(); ActionList.SelectedItem = action; RunSelectedAction(); }
             return true;
         }
         if (modifiers == ModifierKeys.Control && e.Key == Key.OemComma)
@@ -96,7 +96,7 @@ public partial class MainWindow
             if (ActionList.SelectedItem != null) ActionList.ScrollIntoView(ActionList.SelectedItem);
             return true;
         }
-        if (e.Key == Key.Enter) { e.Handled = true; if (!e.IsRepeat) RunSelectedAction(); return true; }
+        if (e.Key == Key.Enter) { e.Handled = true; if (!repeat) RunSelectedAction(); return true; }
         // Other launcher chords must not act on the obscured selection while the actions pane is up.
         if (modifiers.HasFlag(ModifierKeys.Control) && e.Key is Key.F or Key.H or Key.OemComma
             || modifiers == ModifierKeys.Control && KeyInterop.VirtualKeyFromKey(e.Key) is >= 48 and <= 57)

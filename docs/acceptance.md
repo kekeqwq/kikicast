@@ -1,5 +1,11 @@
 # 验收基准
 
+## 0.2.1 空查询首个 Enter 补丁候选
+
+保留用户报告；受控 WPF 输入通过公开 InputManager 的仅 smoke 缺失 KeyUp seam 复现：空查询/首行选择/输入框焦点均正确，新的 native Enter 非重复但 WPF IsRepeat=true，被旧代码拒绝。普通全消息路径不会复现，早期普通三次 Enter 通过及未正确建立缺失 KeyUp seam 的失败均保留，不冒充真实用户复现。修复只对 Enter 用调用内 KeyPressGate，并在成功呼出后一次只读 GetAsyncKeyState 初始化已按住状态；根/Actions/Ctrl+Enter共用，其他键和激活/IME/参数/确认门禁不改。
+
+506=368 Core+138 Windows零警告/测试通过；`first-enter-fixed-{1,2}` 验证 stale WPF repeat 情形的一次新 Enter、连续空查询呼出、已按住/重复不执行和释放后执行、自有源文本/前台/native输入精确恢复。专用回归已纳入源码/双RID打包门禁；没有真实应用/扩展启动、剪贴板/壁纸/回收或个人配置改动。物理双 Ctrl/用户原目标场景仍待复测；发布步骤不重分类为稳定/原生x64签收。
+
 ## 0.2 扩展/登录自启本地候选
 
 用户已报告 `RandomWallpaper 0.1.0-preview.3` 本机人工测试成功（此前 DeleteNow /跨目录 fallback/锁屏原始来源核验失败已保留）。这仅签收当前主机/本次路径，不代表原生x64、所有配置/系统策略或分发导入流程验收。后续发布后的导入测试仍由用户手动进行；没有由自动化执行真实壁纸或回收。

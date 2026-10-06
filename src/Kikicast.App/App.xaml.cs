@@ -130,7 +130,8 @@ public partial class App : System.Windows.Application
         if (smoke && !e.Args.Contains("--smoke-test-startup", StringComparer.Ordinal)
             && !e.Args.Contains("--smoke-test-windows", StringComparer.Ordinal)
             && !e.Args.Contains("--smoke-test-placement", StringComparer.Ordinal)
-            && !e.Args.Contains("--smoke-test-models", StringComparer.Ordinal))
+            && !e.Args.Contains("--smoke-test-models", StringComparer.Ordinal)
+            && !e.Args.Contains("--smoke-test-first-enter", StringComparer.Ordinal))
         {
             if (automateOwnedInput)
             {
@@ -157,6 +158,17 @@ public partial class App : System.Windows.Application
                 modelTimer.Tick += (_, _) => { modelTimer.Stop(); Shutdown(); }; modelTimer.Start();
             }
             catch (Exception ex) { Console.Error.WriteLine("WPF model smoke failed: " + ex); Shutdown(1); }
+            return;
+        }
+        if (smoke && e.Args.Contains("--smoke-test-first-enter", StringComparer.Ordinal))
+        {
+            try
+            {
+                if (!automateOwnedInput) throw new ArgumentException("First Enter native smoke requires explicit owned input opt-in.");
+                await palette.VerifyFirstEnterAsync(evidenceDirectory);
+                Shutdown();
+            }
+            catch (Exception ex) { Console.Error.WriteLine("First Enter owned smoke failed: " + ex); Shutdown(1); }
             return;
         }
         if (smoke && (e.Args.Contains("--smoke-test-windows", StringComparer.Ordinal) || e.Args.Contains("--smoke-test-placement", StringComparer.Ordinal)))

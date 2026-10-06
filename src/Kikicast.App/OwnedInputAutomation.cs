@@ -110,6 +110,27 @@ internal static class OwnedInputAutomation
         finally { foreach (var modifier in modifiers.Reverse()) Send(Key(modifier, up: true)); }
         await Task.Delay(160);
     }
+    public static async Task HoldAcrossOpeningAsync(Window source, Window target, ushort key, Func<Task> openTarget)
+    {
+        RequireOwnedForeground(new WindowInteropHelper(source).Handle);
+        if (new ushort[] { 16, 17, 18, 91, 92, key }.Any(x => (GetAsyncKeyState(x) & 0x8000) != 0))
+            throw new InvalidOperationException("Held-key probe aborted: real key already held.");
+        try
+        {
+            Send(Key(key));
+            await source.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            await openTarget();
+            for (var i = 0; i < 2; i++)
+            {
+                RequireOwnedForeground(new WindowInteropHelper(target).Handle);
+                Send(Key(key));
+                await target.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                await Task.Delay(40);
+            }
+        }
+        finally { Send(Key(key, up: true)); }
+        await Task.Delay(160);
+    }
     public static async Task BurstLettersAsync(Window window, string text)
     {
         RequireOwnedForeground(new WindowInteropHelper(window).Handle);

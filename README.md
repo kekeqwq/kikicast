@@ -26,13 +26,13 @@ Windows 原生版 Tinycast，目标是尽量保持跨平台一致的操作逻辑
 
 ## 下载与安装（0.2 预览版）
 
-[GitHub 0.2.0-preview.1](https://github.com/kekeqwq/kikicast/releases/tag/v0.2.0-preview.1) 的目标资产为 **Setup.exe 安装程序，不是免安装 ZIP**：
+[GitHub 0.2.1-preview.1](https://github.com/kekeqwq/kikicast/releases/tag/v0.2.1-preview.1) 的目标资产为 **Setup.exe 安装程序，不是免安装 ZIP**：
 
-- x86_64：`Kikicast-0.2.0-preview.1-windows-x86_64-setup.exe`
-- aarch64 / ARM64：`Kikicast-0.2.0-preview.1-windows-aarch64-setup.exe`
-- 旧 [0.1.0-preview.1](https://github.com/kekeqwq/kikicast/releases/tag/v0.1.0-preview.1) 标签/安装包保持不变。
+- x86_64：`Kikicast-0.2.1-preview.1-windows-x86_64-setup.exe`
+- aarch64 / ARM64：`Kikicast-0.2.1-preview.1-windows-aarch64-setup.exe`
+- 补丁修复呼出后空查询首次 Enter 被 WPF 旧重复状态吞掉；不改焦点策略，仍防长按重复。旧 [0.2.0-preview.1](https://github.com/kekeqwq/kikicast/releases/tag/v0.2.0-preview.1) / [0.1.0-preview.1](https://github.com/kekeqwq/kikicast/releases/tag/v0.1.0-preview.1) 标签/安装包保持不变。
 
-自带 .NET 10 runtime，默认当前用户安装，无需管理员权限；创建开始菜单和 Windows 应用卸载入口。默认不自启；启动后在托盘，双 Ctrl 呼出。先退出旧实例再升级/卸载；卸载保留家目录个人配置。PowerShell 7 仅 Shell/命令功能单独需要。预览版无可信签名，SHA-256 不是签名替代，不应关闭 Windows 安全保护。ARM64 原生与 x64-on-ARM64 仿真验证明确分开，不宣称已通过原生 x64 或完整人工验收。详见 [0.2 说明](docs/releases/0.2.0-preview.1.md) / [安装包合同](docs/installer.md)。
+自带 .NET 10 runtime，默认当前用户安装，无需管理员权限；创建开始菜单和 Windows 应用卸载入口。默认不自启；启动后在托盘，双 Ctrl 呼出。先退出旧实例再升级/卸载；卸载保留家目录个人配置。PowerShell 7 仅 Shell/命令功能单独需要。预览版无可信签名，SHA-256 不是签名替代，不应关闭 Windows 安全保护。ARM64 原生与 x64-on-ARM64 仿真验证明确分开，不宣称已通过原生 x64 或完整人工验收。详见 [0.2.1 补丁说明](docs/releases/0.2.1-preview.1.md) / [0.2 功能说明](docs/releases/0.2.0-preview.1.md) / [安装包合同](docs/installer.md)。
 
 ## 0.2 预览版新增
 
@@ -89,7 +89,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-test.ps1 -Wind
 - 计算支持英文数字、四则、括号、幂、科学计数法和基础法币转换；百分比、单位、尾部表达式待实现。
 - 自定义尺寸、显示器循环和已打开窗口布局编辑/预览/捕获/保存/实际摆放已接入；布局缺失应用及文件/URI/字面参数已按默认关闭策略接入；Rooms 尚未实现；跨屏 DPI、固定尺寸/管理员窗口仍需实机回归，不承诺通用全屏。
 - 面板目前展开、主屏定位；同窗口 Ctrl+K 动作菜单已实现；多屏跟随、紧凑模式待补。不宣称像素级复刻 Apple 液态玻璃。
-- 最新 0.2 Release 编译零警告，498 个测试通过（362 Core + 136 Windows）（含目录迁移、渠道隔离、不覆盖与失败回退）。上一版 ARM64 四种完整桌面冒烟覆盖托盘启动、英文面板、设置、绑定、窗口分屏/恢复、自有目标焦点返回，以及受控条目分组/收藏槽/建议开关和刷新后英文焦点、背景捕获/关闭释放、回收站原查询及只读 native 统计、货币卡、Shell 编辑器、启动参数，以及本机受控 pwsh UTF-8 输出/控制台句柄、自有独立 EXE 自动发现/文件删除通知、真实 `.lnk` 目标读取和去重、自定义命令库/收藏/隐藏/禁用、功能开关及损坏 schema 保留；本轮新增 10 项几何/移动已经自有窗口原生 placement/restore 子集验证，WPF models 子集验证动作/别名/隐藏/参数字段/六分类；字面参数注入测试运行自有 pwsh 通过。经用户授权的自有窗口点击/按键自动化已通过当前四种完整桌面冒烟，截图与焦点/布局恢复证据在 `artifacts/acceptance/`；未更改正常激活策略。合成输入不是物理双 Ctrl/真实 IME/TSF、主题和混合 DPI 的人工验收。
+- 最新 0.2 Release 编译零警告，506 个测试通过（368 Core + 138 Windows）（含目录迁移、渠道隔离、不覆盖与失败回退）。上一版 ARM64 四种完整桌面冒烟覆盖托盘启动、英文面板、设置、绑定、窗口分屏/恢复、自有目标焦点返回，以及受控条目分组/收藏槽/建议开关和刷新后英文焦点、背景捕获/关闭释放、回收站原查询及只读 native 统计、货币卡、Shell 编辑器、启动参数，以及本机受控 pwsh UTF-8 输出/控制台句柄、自有独立 EXE 自动发现/文件删除通知、真实 `.lnk` 目标读取和去重、自定义命令库/收藏/隐藏/禁用、功能开关及损坏 schema 保留；本轮新增 10 项几何/移动已经自有窗口原生 placement/restore 子集验证，WPF models 子集验证动作/别名/隐藏/参数字段/六分类；字面参数注入测试运行自有 pwsh 通过。经用户授权的自有窗口点击/按键自动化已通过当前四种完整桌面冒烟，截图与焦点/布局恢复证据在 `artifacts/acceptance/`；未更改正常激活策略。合成输入不是物理双 Ctrl/真实 IME/TSF、主题和混合 DPI 的人工验收。
 - 显示器循环：两屏/三屏完整槽位、实际边缘及模式/拓扑重置通过 Core 生成数据测试；历史单屏探针验证不翻边；本轮已接两块真实屏（3840×2160、2880×1920，均192 DPI），Ctrl+Alt+F22自有窗口完整验证四个半动作跨屏槽位和wrap，Ctrl+Alt+F21布局真实分布两屏及Restore。用户已拔外屏，本机读回2880×1920/192 DPI单屏，完整单屏窗口回归通过；不是混合DPI、实时失联Restore或重连验收。设置实际选择/Save/重载和写失败回滚已验证。
 - 用户授权JeppView仅启动一次：启用探测后记录唯一EXE，名称搜索/退出保留/JSON重载通过，已结束本次新建Job且剩余JeppView进程0。额外摆放被拒绝的原始记录保留；按用户要求，不再测其可能特殊的初始化窗，也不作为通用窗口验收阻塞项。真实双屏/JeppView范围见 [原生验收记录](docs/native-connected-display-acceptance.md)。
 - 发布门禁见 [发布检查](docs/release-checklist.md)：`scripts/package-release.ps1` 要求构建/测试/完整桌面冒烟、自包含双架构 apphost复测/受控开始菜单安装升级卸载、Setup.exe、清晰标注预览及 SHA-256；稳定包还要求所有必要项通过、干净源码及可信签名。当前稳定包被未完成项阻止，不伪造发版结果。

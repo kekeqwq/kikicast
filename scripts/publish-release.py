@@ -70,7 +70,7 @@ def upload(token, url, file):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", default="0.2.0-preview.1")
+    parser.add_argument("--version", default="0.2.1-preview.1")
     parser.add_argument("--artifacts", required=True, type=Path)
     parser.add_argument("--publish", action="store_true")
     args = parser.parse_args()
@@ -105,12 +105,24 @@ def main():
                 raise RuntimeError("Incomplete owned installer acceptance.")
         if args.version.startswith("0.2.") and not all(evidence.get(field) for field in ["privateStartupRegistrationRemoved", "foreignStartupValueRetained", "noUserApplicationTerminated"]):
             raise RuntimeError("Incomplete startup ownership/uninstall acceptance.")
+        first_enter = False
+        if args.version.startswith("0.2.1-"):
+            evidence_root = directory / (file.name + ".evidence")
+            published_stage = "published-emulated-x64" if payload["publishedValidation"] == "emulated-x64-on-arm64" else "published-native"
+            for stage in ["source-host", published_stage]:
+                probe = json.loads((evidence_root / (stage + "-FirstEnter") / "first-enter-evidence.json").read_text(encoding="utf-8"))
+                if not all(probe.get(k) for k in ["heldAcrossOpeningAndRepeatsRefused", "freshPressAfterReleaseExecuted", "sourceInputRestored", "syntheticOwnedInput"]) or any(probe.get(k) for k in ["realApplicationsLaunched", "extensionCommandsExecuted", "wallpaperChanged", "clipboardChanged", "physicalDoubleCtrlAccepted"]):
+                    raise RuntimeError("Incomplete or misleading first Enter acceptance.")
+                if len(probe["probes"]) != 3 or not all(x["singleEnterExecuted"] for x in probe["probes"]) or not any(x["lostKeyUpOwnedSeam"] and x["routedRepeat"] and not x["nativeRepeat"] for x in probe["probes"]):
+                    raise RuntimeError("Stale-repeat regression did not exercise the owned seam.")
+            first_enter = True
         receipts.append({"asset": file.name, "runtime": runtime, "sha256": digest, "sourceRevision": source,
                          "validation": payload["publishedValidation"], "ownedInstallUpgradeUninstall": True,
                          "installerScope": "same payload/recipe, private identity/mutex/group; not unassisted real-profile acceptance",
                          "startupOwnedRemovalTested": bool(evidence.get("privateStartupRegistrationRemoved")),
                          "foreignStartupPreservedTested": bool(evidence.get("foreignStartupValueRetained")),
-                         "realSignInAccepted": False, "signed": False, "nativeX64Accepted": False, "stableReadiness": False})
+                         "singleEmptyQueryEnterOwnedRegression": first_enter, "heldEnterSuppressed": first_enter,
+                         "physicalDoubleCtrlAccepted": False, "realSignInAccepted": False, "signed": False, "nativeX64Accepted": False, "stableReadiness": False})
         installers.append(file)
     if not args.publish:
         print("PASS: local source/tag/dual setup/manifest/checksum/owned installer validation only; no metadata overwrite or GitHub release created.")

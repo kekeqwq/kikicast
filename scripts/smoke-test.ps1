@@ -1,5 +1,5 @@
 param([switch]$Settings, [switch]$WindowManagement,
-    [switch]$PlacementOnly, [switch]$ModelsOnly, [switch]$TrayOnly, [string]$ExePath, [switch]$AutomateInput, [string]$EvidenceDirectory, [switch]$DescribeInvocation)
+    [switch]$PlacementOnly, [switch]$ModelsOnly, [switch]$TrayOnly, [switch]$FirstEnter, [string]$ExePath, [switch]$AutomateInput, [string]$EvidenceDirectory, [switch]$DescribeInvocation)
 $ErrorActionPreference = 'Stop'
 # Desktop smoke only: starts our application, enumerates only its visible windows,
 # and allows --smoke-test to shut down normally (unhooks and disposes the tray).
@@ -28,7 +28,9 @@ public static class KikicastSmoke {
 }
 '@
 $exe = if ($ExePath) { $ExePath } else { Join-Path $PSScriptRoot '../src/Kikicast.App/bin/Release/net10.0-windows/Kikicast.App.exe' }
-[string[]]$arguments = if ($ModelsOnly) { @('--smoke-test', '--smoke-test-models') }
+if ($FirstEnter -and -not $AutomateInput) { throw 'FirstEnter requires explicit owned input opt-in.' }
+[string[]]$arguments = if ($FirstEnter) { @('--smoke-test', '--smoke-test-first-enter') }
+    elseif ($ModelsOnly) { @('--smoke-test', '--smoke-test-models') }
     elseif ($PlacementOnly) { @('--smoke-test', '--smoke-test-placement') }
     elseif ($WindowManagement) { @('--smoke-test', '--smoke-test-windows') }
     elseif ($Settings) { @('--smoke-test', '--smoke-test-settings') }
@@ -52,7 +54,7 @@ try {
     $p = Start-Process -FilePath $exe -ArgumentList $arguments -RedirectStandardError $report -PassThru
     # Keep the process handle open for a short-lived fixture's exit code.
     $null = $p.Handle
-    if (-not $WindowManagement -and -not $PlacementOnly -and -not $ModelsOnly) {
+    if (-not $WindowManagement -and -not $PlacementOnly -and -not $ModelsOnly -and -not $FirstEnter) {
         Start-Sleep -Seconds 2
         $p.Refresh()
         if ($p.HasExited) { throw "Application exited early: $($p.ExitCode)" }
@@ -73,7 +75,8 @@ try {
     if (-not $p.WaitForExit($(if ($AutomateInput) { 65000 } else { 15000 }))) { throw 'Application did not shut down normally' }
     $p.WaitForExit()
     if ($p.ExitCode -ne 0) { throw "Exit code: $($p.ExitCode). $([System.IO.File]::ReadAllText($report))" }
-    if ($ModelsOnly) { Write-Output 'PASS: WPF launcher/actions/arguments/settings models only (no focus, visual or IME acceptance).' }
+    if ($FirstEnter) { Write-Output 'PASS: single empty-query Enter including owned missing-key-up / stale-WPF-repeat seam.' }
+    elseif ($ModelsOnly) { Write-Output 'PASS: WPF launcher/actions/arguments/settings models only (no focus, visual or IME acceptance).' }
     elseif ($PlacementOnly) { Write-Output 'PASS: 32-action catalog / owned placement and restore only (no focus/IME acceptance).' }
     elseif ($WindowManagement) { Write-Output 'PASS: bindings/owned window placement, discovery/deletion, saved commands/feature gates, console probes.' }
     elseif ($TrayOnly) { Write-Output 'PASS: startup stays hidden in tray and shuts down normally.' }

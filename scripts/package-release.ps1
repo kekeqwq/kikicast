@@ -1,7 +1,7 @@
 param(
     [switch]$Preview,
     [ValidateSet('win-arm64', 'win-x64')][string]$Runtime = 'win-arm64',
-    [string]$Version = '0.2.0-preview.1',
+    [string]$Version = '0.2.1-preview.1',
     [string]$Destination,
     [string]$InnoCompiler,
     [switch]$CrossPublishPreview,
@@ -74,7 +74,7 @@ $work = Join-Path ([IO.Path]::GetTempPath()) ('KikicastPackage-' + [guid]::NewGu
 [void](New-Item -ItemType Directory -Path $work)
 $completed = $false
 function Invoke-Smokes([string]$exe, [string]$stage) {
-    foreach ($mode in @('default','TrayOnly','Settings','WindowManagement')) {
+    foreach ($mode in @('default','TrayOnly','Settings','WindowManagement','FirstEnter')) {
         $arguments = @('-NoProfile','-ExecutionPolicy','Bypass','-File',(Join-Path $repo 'scripts/smoke-test.ps1'),'-ExePath',$exe)
         if ($mode -ne 'default') { $arguments += '-' + $mode }
         if ($mode -ne 'TrayOnly') { $arguments += @('-AutomateInput','-EvidenceDirectory',(Join-Path $work "evidence/$stage-$mode")) }

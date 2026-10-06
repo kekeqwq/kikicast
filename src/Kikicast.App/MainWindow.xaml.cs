@@ -62,6 +62,7 @@ public partial class MainWindow : Window
     private bool executing;
     private bool ready;
     private bool composing;
+    private readonly KeyPressGate enterPress = new();
     private string? persistentStatus;
 
     public MainWindow(UserStore store, string cacheDirectory, RunningApplicationDiscovery discovery, SavedCommandStore commands, ExtensionStore extensions)
@@ -181,6 +182,7 @@ public partial class MainWindow : Window
             if (!WindowActivation.Once(hwnd, focusHost: true))
             { Dismiss(true, "activation denied"); ActionFailed?.Invoke("Windows denied activation. Please try the shortcut again."); return; }
             Query.Focus(); Keyboard.Focus(Query);
+            enterPress.Rearm(PhysicalKeyboard.IsEnterDown());
             inputSession.Enforce();
             focusArmed = HasQueryFocus;
             if (!focusArmed) { Dismiss(true, "query focus failed"); ActionFailed?.Invoke("The search box did not receive focus. Please try again."); }
@@ -498,18 +500,26 @@ public partial class MainWindow : Window
         Results.SelectedIndex = index; Results.ScrollIntoView(Results.SelectedItem);
     }
 
+    private static bool IsEnter(System.Windows.Input.KeyEventArgs e) => e.Key == Key.Enter
+        || e.Key == Key.ImeProcessed && e.ImeProcessedKey == Key.Enter
+        || e.Key == Key.System && e.SystemKey == Key.Enter;
+    private void ReleaseKey(object sender, System.Windows.Input.KeyEventArgs e)
+    { if (IsEnter(e)) enterPress.Release(); }
     private void HandleKey(object sender, System.Windows.Input.KeyEventArgs e)
     {
-        // IME must finish composition before Enter can activate a row.
+        // WPF may miss the Enter key-up when execution hides the palette and
+        // restores another app. Its cached IsRepeat must not swallow a fresh press.
+        var repeat = IsEnter(e) ? !enterPress.Press() : e.IsRepeat;
+        // Track the press even when IME consumes it; holding it must never execute.
         if (composing || e.Key == Key.ImeProcessed) return;
         var modifiers = Keyboard.Modifiers;
-        if (HandleActionKey(e, modifiers)) return;
+        if (HandleActionKey(e, modifiers, repeat)) return;
         if (modifiers == ModifierKeys.Control && e.Key == Key.K && store.Preferences.ActionsPanelEnabled)
         { e.Handled = true; if (!e.IsRepeat) OpenActions(); }
         else if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.H && CanHide(Results.SelectedItem as Row))
         { e.Handled = true; if (!e.IsRepeat) _ = HideSelectedAsync(); }
         else if (modifiers == ModifierKeys.Control && e.Key == Key.Enter && Results.SelectedItem is Row { Entry: not null } reveal)
-        { e.Handled = true; if (!e.IsRepeat) Reveal(reveal); }
+        { e.Handled = true; if (!repeat) Reveal(reveal); }
         else if (modifiers == (ModifierKeys.Control | ModifierKeys.Shift) && e.Key == Key.F)
         { e.Handled = true; if (!e.IsRepeat) ChangeFavorite(); }
         else if (modifiers == (ModifierKeys.Control | ModifierKeys.Alt) && e.Key is Key.Up or Key.Down)
@@ -543,7 +553,7 @@ public partial class MainWindow : Window
         }
         else if (e.Key is Key.PageUp or Key.PageDown && modifiers == ModifierKeys.None)
         { e.Handled = true; SelectRelative(e.Key == Key.PageDown ? 8 : -8); }
-        else if (e.Key == Key.Enter && !e.IsRepeat) { e.Handled = true; Execute(); }
+        else if (e.Key == Key.Enter) { e.Handled = true; if (!repeat) Execute(); }
     }
 
     private void ActivateSelection(object sender, MouseButtonEventArgs e) => Execute();
