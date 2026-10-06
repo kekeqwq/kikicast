@@ -75,6 +75,7 @@ public sealed class ThemeService : IDisposable
         Brush("PaletteSelectionBrush", contrast ? SystemColors.HighlightColor : dark ? Color.FromArgb(42, 255, 255, 255) : Color.FromArgb(20, 0, 0, 0));
         Brush("GlassHighlightBrush", contrast ? Colors.Transparent : Color.FromArgb(dark ? (byte)12 : (byte)24, 255, 255, 255));
         Brush("GlassEdgeBrush", contrast ? SystemColors.WindowTextColor : Color.FromArgb(dark ? (byte)95 : (byte)195, 255, 255, 255));
+        LauncherCategoryIcons.Populate(app.Resources, dark, contrast);
         windows.RemoveAll(x => !x.Window.TryGetTarget(out _));
         foreach (var item in windows)
             if (item.Window.TryGetTarget(out var window)) ApplyWindow(window, item.Glass);

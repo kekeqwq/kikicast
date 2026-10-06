@@ -149,7 +149,7 @@ public partial class App : System.Windows.Application
         {
             try
             {
-                await palette.VerifyLauncherSectionsAsync(); await palette.VerifyFeatureSettingsAsync();
+                await palette.VerifyLauncherSectionsAsync(); await palette.VerifyFeatureSettingsAsync(); await palette.VerifyCategoryIconsAsync(evidenceDirectory);
                 await palette.VerifyLauncherActionsAsync(verifyFocus: false); await palette.VerifyArgumentFieldsAsync();
                 await palette.VerifyApplicationFolderSettingsAsync(); await palette.VerifySearchRankingAsync(); await palette.VerifyEntryBindingModelsAsync(); await palette.VerifyPackagedApplicationsAsync(evidenceDirectory); await palette.VerifyCustomWindowSizeModelsAsync(evidenceDirectory); await palette.VerifyLayoutModelsAsync();
                 ShowSettings("Launcher"); // Validate actual category/binding rows without requiring palette activation.
@@ -319,6 +319,7 @@ public partial class App : System.Windows.Application
                 throw new InvalidOperationException("Palette did not capture its enabled background, or captured with transparency disabled");
             await palette.VerifyLauncherSectionsAsync();
             await palette.VerifyFeatureSettingsAsync();
+            await palette.VerifyCategoryIconsAsync(evidenceDirectory);
             await palette.VerifyLauncherActionsAsync();
             await palette.VerifyArgumentFieldsAsync();
             await palette.VerifyApplicationFolderSettingsAsync(); await palette.VerifySearchRankingAsync(); await palette.VerifyEntryBindingModelsAsync(); await palette.VerifyPackagedApplicationsAsync(evidenceDirectory); await palette.VerifyCustomWindowSizeModelsAsync(evidenceDirectory); await palette.VerifyLayoutModelsAsync();

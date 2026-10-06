@@ -92,6 +92,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-test.ps1 -Wind
 - 显示器循环：两屏/三屏完整槽位、实际边缘及模式/拓扑重置通过 Core 生成数据测试；历史单屏探针验证不翻边；本轮已接两块真实屏（3840×2160、2880×1920，均192 DPI），Ctrl+Alt+F22自有窗口完整验证四个半动作跨屏槽位和wrap，Ctrl+Alt+F21布局真实分布两屏及Restore。用户已拔外屏，本机读回2880×1920/192 DPI单屏，完整单屏窗口回归通过；不是混合DPI、实时失联Restore或重连验收。设置实际选择/Save/重载和写失败回滚已验证。
 - 用户授权JeppView仅启动一次：启用探测后记录唯一EXE，名称搜索/退出保留/JSON重载通过，已结束本次新建Job且剩余JeppView进程0。额外摆放被拒绝的原始记录保留；按用户要求，不再测其可能特殊的初始化窗，也不作为通用窗口验收阻塞项。真实双屏/JeppView范围见 [原生验收记录](docs/native-connected-display-acceptance.md)。
 - 发布门禁见 [发布检查](docs/release-checklist.md)：`scripts/package-release.ps1` 要求构建/测试/完整桌面冒烟、自包含双架构 apphost复测/受控开始菜单安装升级卸载、Setup.exe、清晰标注预览及 SHA-256；稳定包还要求所有必要项通过、干净源码及可信签名。当前稳定包被未完成项阻止，不伪造发版结果。
+- 无独立图标的命令已接入 [彩色类别矢量图标](docs/launcher-category-icons.md)：扩展、窗口管理、布局、自定义命令等统一图标尺寸与标题/副标题对齐，原应用图标优先；不读取额外文件或执行扩展，支持明暗与高对比资源。
 - 功能/设置配对的推进矩阵见 [功能设置矩阵](docs/feature-settings-matrix.md)。本地目录扫描范围（手选32项/默认一层、可选0–3层/有界检查/应用总开关）已实现；[Windows App Paths](docs/windows-app-paths.md) 已有独立保存设置、实际目标去重和旧行执行门禁；[现有条目全局绑定](docs/entry-bindings.md)已完成设置/门禁/回滚闭环，Store/AUMID 索引、来源开关、激活路由和本地 PNG 图标已接入；当前宿主只读验证19个注册包装入口，测试未安装包或启动用户 Store 应用，真实激活/更新/卸载仍待签收。P1 尚未完成，不能用测试数量代替 Tinycast 功能覆盖率。
 
 ## 上游与许可

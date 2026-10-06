@@ -13,6 +13,7 @@ public partial class MainWindow : Window
     private sealed record Row(string Title, string Subtitle, LauncherEntry? Entry = null, string? Answer = null,
         string? Command = null, WindowAction? WindowAction = null, string Section = "Results", string? FavoriteChord = null, bool IsFavorite = false, CurrencyQuery? Currency = null, string? ShellText = null, SavedCommand? Custom = null, CalculationVisit? HistoryItem = null, string? Alias = null, string? GlobalChord = null, CustomWindowSize? WindowSize = null, WindowLayout? Layout = null, ExtensionCommand? Extension = null)
     {
+        public LauncherIconKind IconKind => LauncherIcon.Select(Kind(this), Command, Answer != null || Currency != null, HistoryItem != null);
         public bool IsCurrency => Currency != null;
         public string CurrencyOutput => Title;
         public string? CurrencyInput => Currency?.InputLabel;
