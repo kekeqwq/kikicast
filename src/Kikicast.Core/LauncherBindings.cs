@@ -8,7 +8,7 @@ public static class LauncherBindings
     public static bool CanBind(string? id)
     {
         if (string.IsNullOrWhiteSpace(id) || id.Length > 4096 || id.Any(char.IsControl)) return false;
-        if (CustomWindowSize.TryId(id, out _) || WindowLayout.TryId(id, out _)) return true;
+        if (CustomWindowSize.TryId(id, out _) || WindowLayout.TryId(id, out _) || ExtensionIdentity.IsEntry(id)) return true;
         if (id.StartsWith("packaged:", StringComparison.OrdinalIgnoreCase)) return PackagedApplicationId.IsValid(id[9..]);
         if (id.StartsWith("app:", StringComparison.OrdinalIgnoreCase))
         {
@@ -25,7 +25,8 @@ public static class LauncherBindings
     public static bool FeatureEnabled(string id, AppPreferences p)
     {
         if (!CanBind(id)) return false;
-        return WindowLayout.TryId(id, out _) ? p.WindowManagementEnabled && p.ApplicationsEnabled
+        return ExtensionIdentity.IsEntry(id) ? p.ExtensionsEnabled
+            : WindowLayout.TryId(id, out _) ? p.WindowManagementEnabled && p.ApplicationsEnabled
             : CustomWindowSize.TryId(id, out _) ? p.WindowManagementEnabled
             : id.StartsWith("packaged:", StringComparison.OrdinalIgnoreCase) ? p.ApplicationsEnabled && p.IncludePackagedApplications
             : id.StartsWith("app:", StringComparison.OrdinalIgnoreCase) ? p.ApplicationsEnabled

@@ -1,6 +1,6 @@
 namespace Kikicast.Core;
 
-public enum LauncherKind { Application, WindowCommand, Command, CustomCommand, WindowLayout }
+public enum LauncherKind { Application, WindowCommand, Command, CustomCommand, WindowLayout, Extension }
 public sealed record LauncherItem(string Id, string Name, LauncherKind Kind, bool HasHotKey = false,
     bool CanSuggest = true, int? SuggestionPriority = null, DateTimeOffset? InstalledAt = null, bool HasAlias = false);
 public sealed record LauncherPlacement(LauncherItem Item, string Section, int? FavoriteIndex = null)
@@ -13,7 +13,7 @@ public static class LauncherSections
     public static string ApplicationId(string path) => "app:" + path.ToUpperInvariant();
     public static string WindowId(WindowAction action) => "window:" + action;
     public static string Section(LauncherKind kind) => kind switch
-    { LauncherKind.Application => "Applications", LauncherKind.WindowLayout => "Window layouts", LauncherKind.WindowCommand => "Window management", LauncherKind.CustomCommand => "Custom Commands", _ => "Commands" };
+    { LauncherKind.Extension => "Extensions", LauncherKind.Application => "Applications", LauncherKind.WindowLayout => "Window layouts", LauncherKind.WindowCommand => "Window management", LauncherKind.CustomCommand => "Custom Commands", _ => "Commands" };
 
     // Headers are metadata, not actionable rows. All consumers share this flat order.
     public static IReadOnlyList<LauncherPlacement> Empty(IEnumerable<LauncherItem> source, IReadOnlyList<string> favorites,
@@ -45,7 +45,7 @@ public static class LauncherSections
         taken.UnionWith(picked.Select(x => x.Id));
         var result = pinned.Select((x, i) => new LauncherPlacement(x, "Favorites", i)).ToList();
         result.AddRange(picked.Select(x => new LauncherPlacement(x, "Suggestions")));
-        foreach (var kind in new[] { LauncherKind.Application, LauncherKind.WindowLayout, LauncherKind.WindowCommand, LauncherKind.CustomCommand, LauncherKind.Command })
+        foreach (var kind in new[] { LauncherKind.Application, LauncherKind.WindowLayout, LauncherKind.WindowCommand, LauncherKind.CustomCommand, LauncherKind.Extension, LauncherKind.Command })
             result.AddRange(ordered.Where(x => x.Kind == kind && !taken.Contains(x.Id)).Select(x => new LauncherPlacement(x, Section(kind))));
         return result;
     }

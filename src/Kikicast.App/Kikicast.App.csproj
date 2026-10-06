@@ -20,7 +20,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\kikicast.ico</ApplicationIcon>
-    <Version>0.1.0-preview.1</Version>
+    <Version>0.2.0-preview.1</Version>
     <Product>Kikicast</Product>
     <Description>Windows-native launcher and window management (preview)</Description>
     <RepositoryUrl>https://github.com/kekeqwq/kikicast</RepositoryUrl>

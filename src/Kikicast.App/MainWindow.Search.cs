@@ -14,6 +14,7 @@ public partial class MainWindow
         [RecycleBinCommand.OpenId] = LauncherSearchProfile.Create("Open Recycle Bin", keywords: ["open trash", "open trash bin", "dakai huishouzhan"]),
         [RecycleBinCommand.EmptyId] = LauncherSearchProfile.Create("Empty Recycle Bin", keywords: ["empty trash", "empty trash bin", "qingkong huishouzhan"])
     };
-    private static LauncherSearchProfile SearchFields(Row row) => row.Entry?.SearchFields ?? row.Custom?.SearchFields ?? row.WindowSize?.SearchFields ?? row.Layout?.SearchFields
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ExtensionCommand, LauncherSearchProfile> extensionSearchFields = new();
+    private static LauncherSearchProfile SearchFields(Row row) => (row.Extension is { } extension ? extensionSearchFields.GetValue(extension, static x => LauncherSearchProfile.Create(x.Title, keywords: ["extension"])) : null) ?? row.Entry?.SearchFields ?? row.Custom?.SearchFields ?? row.WindowSize?.SearchFields ?? row.Layout?.SearchFields
         ?? (row.WindowAction is { } action ? windowSearchFields[action] : commandSearchFields[row.Command!]);
 }

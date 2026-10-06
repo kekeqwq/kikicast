@@ -32,6 +32,7 @@ public partial class MainWindow
             list.AddRange(WindowGeometry.Commands.Select(x => new LauncherSettingsItem(LauncherSections.WindowId(x.Action), x.Name, LauncherSections.WindowId(x.Action), LauncherKind.WindowCommand)));
             list.AddRange(store.Preferences.CustomWindowSizes.Select(x => new LauncherSettingsItem(x.EntryId, x.Name, x.EntryId, LauncherKind.WindowCommand)));
             list.AddRange(store.Preferences.WindowLayouts.Select(x => new LauncherSettingsItem(x.EntryId, x.Name, x.EntryId, LauncherKind.WindowLayout)));
+            list.AddRange(extensions.Commands(includeDisabled: true).Select(x => new LauncherSettingsItem(x.EntryId, x.Title, x.EntryId, LauncherKind.Extension)));
             list.AddRange(commands.Current.Commands.Select(x => new LauncherSettingsItem(x.EntryId, x.Name, x.EntryId, LauncherKind.CustomCommand)));
             foreach (var (id, name) in new[] { ("history", "Calculation history"), ("settings", "Kikicast settings"), ("shell", "Run Shell Command"), (RecycleBinCommand.OpenId, "Open Recycle Bin"), (RecycleBinCommand.EmptyId, "Empty Recycle Bin") })
                 list.Add(new("cmd:" + id, name, "cmd:" + id, LauncherKind.Command));

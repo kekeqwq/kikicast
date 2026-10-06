@@ -95,13 +95,13 @@
    <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>
    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TabControl">
     <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-     <StackPanel Orientation="Horizontal" IsItemsHost="True" Margin="0,0,0,20" HorizontalAlignment="Left"/>
+     <WrapPanel IsItemsHost="True" Margin="0,0,0,20" HorizontalAlignment="Stretch"/>
      <ContentPresenter Grid.Row="1" x:Name="PART_SelectedContentHost" ContentSource="SelectedContent"/>
     </Grid>
    </ControlTemplate></Setter.Value></Setter>
   </Style>
   <Style TargetType="TabItem">
-   <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/><Setter Property="Padding" Value="20,10"/><Setter Property="Margin" Value="0,0,8,0"/>
+   <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/><Setter Property="Padding" Value="12,10"/><Setter Property="Margin" Value="0,0,8,0"/>
    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TabItem">
     <Border x:Name="Tab" CornerRadius="10" BorderThickness="1" BorderBrush="Transparent" Background="Transparent">
      <ContentPresenter ContentSource="Header" Margin="{TemplateBinding Padding}" RecognizesAccessKey="True"/>

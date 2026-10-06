@@ -152,6 +152,8 @@ public partial class SettingsWindow
         if (userStore.Preferences.ApplicationFolderDepth != originalDepth) throw new InvalidOperationException("Injected depth failed persistence round-trip.");
         if (userStore.Preferences.ShowApplicationIcons != originalIcons) throw new InvalidOperationException("Injected icon preference failed persistence round-trip.");
         OwnedInputAutomation.Screenshot(this, System.IO.Path.Combine(evidenceDirectory, "settings-sensitivity-saved.png"));
+        await VerifyStartupInputAsync(evidenceDirectory);
+        await VerifyExtensionInputAsync(evidenceDirectory);
         await VerifyItemBindingInputAsync(evidenceDirectory);
         await VerifyCustomSizeInputAsync(evidenceDirectory);
         await VerifyDisplayCycleInputAsync(evidenceDirectory);

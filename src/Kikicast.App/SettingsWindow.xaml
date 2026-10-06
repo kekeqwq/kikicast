@@ -29,6 +29,9 @@
      <CheckBox x:Name="Fallback" Content="Legacy Alt+Space from an older configuration (clear to remove)" Visibility="Collapsed" Margin="0,12"/>
      <CheckBox x:Name="Suggestions" Content="Show suggestions in empty search" Margin="0,16,0,0"/>
      <TextBlock Text="Favorites: Ctrl+Shift+F · reorder: Ctrl+Alt+↑/↓ · launch: Ctrl+1…9/0" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+     <CheckBox x:Name="StartAtLogon" Content="Start Kikicast when I sign in to Windows (tray only)" Margin="0,20,0,0"/>
+     <TextBlock x:Name="StartupStatus" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+     <TextBlock Text="Off by default. Applies only on Save changes; no administrator rights or scheduled task. Windows can disable/delay startup. This starts Kikicast, not PowerShell or wallpaper commands." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,0"/>
      <TextBlock Text="Interface and input" FontSize="18" FontWeight="SemiBold" Margin="0,24,0,12"/>
      <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="18" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
       <StackPanel>
@@ -170,7 +173,7 @@
      <Border Background="{DynamicResource SurfaceBrush}" CornerRadius="12" Padding="18" Margin="0,0,0,18">
       <StackPanel>
        <TextBlock Text="Window layouts" FontSize="18" FontWeight="SemiBold"/>
-       <TextBlock Text="Edit a preview or capture known open windows. Keep layout draft, then Save changes to persist it with shortcuts. Missing apps/displays are skipped: launching missing apps and opening documents are not implemented yet." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,12"/>
+       <TextBlock Text="Edit a preview or capture known open windows. Keep layout draft, then Save changes to persist it with shortcuts. Missing displays always skip. Saved application/file/URI/argument opening requires the per-layout default-off opt-in; only fresh input windows are claimed." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,12"/>
        <CheckBox x:Name="ShowLayouts" Content="Show window layouts in the launcher (shortcuts still work)" Margin="0,0,0,8"/>
        <ListBox x:Name="LayoutList" DisplayMemberPath="Name" ItemContainerStyle="{StaticResource LayoutListItemStyle}" MaxHeight="120" MinHeight="38" Background="Transparent" BorderThickness="0" AutomationProperties.Name="Saved window layouts"/>
        <WrapPanel Margin="0,8,0,0"><Button Content="New layout" Click="NewLayout"/><Button Content="Edit preview" Click="EditLayout" Margin="8,0,0,0"/><Button Content="Capture open windows" Click="CaptureLayout" Margin="8,0,0,0"/><Button Content="Duplicate" Click="DuplicateLayout" Margin="8,0,0,0"/><Button Content="Delete" Click="DeleteLayout" Margin="8,0,0,0"/></WrapPanel>
@@ -212,6 +215,43 @@
       <ItemsControl.GroupStyle><GroupStyle><GroupStyle.HeaderTemplate><DataTemplate><TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource MutedBrush}" Margin="2,14,0,5"/></DataTemplate></GroupStyle.HeaderTemplate></GroupStyle></ItemsControl.GroupStyle>
      </ItemsControl>
     </StackPanel></ScrollViewer>
+   </TabItem>
+   <TabItem Header="Extensions">
+    <Grid x:Name="ExtensionsPage"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+     <StackPanel Margin="0,0,0,12">
+      <CheckBox x:Name="EnableExtensions" Content="Enable Extensions (execution master gate; applies on Save changes)"/>
+      <CheckBox x:Name="ShowExtensionCommands" Content="Show extension commands in the palette" Margin="0,8,0,0"/>
+      <TextBlock Text="Windows/.NET executables, not Raycast plugins or a security sandbox. Installation/updates/settings never execute commands. Enabling startup does not change wallpaper." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,0"/>
+     </StackPanel>
+     <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="245"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel Margin="0,0,14,0">
+       <TextBlock Text="Installed" FontWeight="SemiBold"/><ListBox x:Name="InstalledExtensions" Height="115" SelectionChanged="ExtensionSelected" Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource ForegroundBrush}" BorderBrush="{DynamicResource BorderBrush}" ItemContainerStyle="{StaticResource LayoutListItemStyle}"/>
+       <Button Content="Import .kikicast…" Click="ImportExtension" Margin="0,6,0,0"/>
+       <Button Content="Refresh official GitHub catalog" Click="RefreshExtensionCatalog" Margin="0,6,0,0"/>
+       <ListBox x:Name="ExtensionCatalogItems" Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource ForegroundBrush}" BorderBrush="{DynamicResource BorderBrush}" ItemContainerStyle="{StaticResource LayoutListItemStyle}" Height="100" Margin="0,6,0,0"/>
+       <Button Content="Install / update selected release" Click="InstallCatalogExtension" Margin="0,6,0,0"/>
+       <Button Content="Uninstall selected extension…" Click="UninstallExtension" Margin="0,12,0,0"/>
+      </StackPanel></ScrollViewer>
+      <ScrollViewer x:Name="ExtensionEditorScroll" Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel x:Name="ExtensionEditor">
+       <TextBlock x:Name="ExtensionTitle" Text="Select an installed extension" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap"/>
+       <CheckBox x:Name="ExtensionEnabled" Content="Enable this extension" Margin="0,12,0,0"/>
+       <StackPanel x:Name="ExtensionOptions" Margin="0,6,0,0"/>
+       <StackPanel x:Name="ExtensionFoldersPanel" Margin="0,10,0,0">
+        <TextBlock Text="Folder commands (top-level files only)" FontWeight="SemiBold"/>
+        <ListBox x:Name="ExtensionFolders" Background="{DynamicResource SurfaceBrush}" Foreground="{DynamicResource ForegroundBrush}" BorderBrush="{DynamicResource BorderBrush}" ItemContainerStyle="{StaticResource LayoutListItemStyle}" DisplayMemberPath="Name" Height="80" SelectionChanged="ExtensionFolderSelected" Margin="0,6,0,0"/>
+        <TextBlock Text="Folder name" Margin="0,8,0,4"/><TextBox x:Name="ExtensionFolderName" MaxLength="100"/>
+        <TextBlock Text="Local folder path (~ is supported)" Margin="0,8,0,4"/><TextBox x:Name="ExtensionFolderPath" MaxLength="4096"/>
+        <CheckBox x:Name="ExtensionFolderEnabled" Content="Enable folder command" IsChecked="True" Margin="0,8,0,0"/>
+        <WrapPanel Margin="0,8,0,0"><Button Content="New folder" Click="NewExtensionFolder"/><Button x:Name="KeepExtensionFolderButton" Content="Keep folder draft" Click="KeepExtensionFolder" Margin="6,0,0,0"/><Button Content="Remove folder draft" Click="RemoveExtensionFolder" Margin="6,0,0,0"/></WrapPanel>
+       </StackPanel>
+       <Button x:Name="SaveExtensionSettingsButton" Content="Save extension settings" Click="SaveExtensionConfiguration" HorizontalAlignment="Left" Margin="0,14,0,0"/>
+       <Button Content="Refresh recorded state (no execution)" Click="RefreshExtensionState" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+       <Button Content="Reset recorded extension state…" Click="ResetExtensionState" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+       <TextBlock x:Name="ExtensionState" TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,8,0,0"/>
+       <TextBlock Text="Keep folder edits, then Save extension settings. Values are local trusted plaintext. Uninstall removes package/configuration/state, never these source directories. DeleteNow has a fresh default-No confirmation on every execution route." TextWrapping="Wrap" Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,0"/>
+      </StackPanel></ScrollViewer>
+     </Grid>
+    </Grid>
    </TabItem>
   </TabControl>
   <Border Grid.Row="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,14,0,0" Margin="0,14,0,0">

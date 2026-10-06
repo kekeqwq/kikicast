@@ -21,6 +21,8 @@ $menu = Join-Path ([Environment]::GetFolderPath('Programs')) $group
 $marker = Join-Path $work 'owned-profile-marker.txt'
 [void](New-Item -ItemType Directory -Path $work)
 [IO.File]::WriteAllText($marker, 'Owned generated profile marker; not real user configuration.')
+$ownedStartupSubkey = 'Software\Kikicast.Tests\SetupStartup\' + ([guid]$id).ToString('N')
+$ownedStartupRegistry = 'HKCU:\' + $ownedStartupSubkey
 $installed = $false; $passed = $false
 function Run-OwnedInstaller([string]$exe, [string[]]$arguments) {
     $p = Start-Process -FilePath $exe -ArgumentList $arguments -PassThru
@@ -32,9 +34,9 @@ function Run-OwnedInstaller([string]$exe, [string[]]$arguments) {
 }
 try {
     if (Test-Path $registry) { throw 'Private fixture identity unexpectedly exists; refusing mutation.' }
-    # Only AppId/mutex/output filename differ from the released installer recipe.
+    # Identity/output and the Run-like test key differ. Never register real login startup.
     # Never overwrite or unregister a preexisting real Kikicast installation.
-    & $InnoCompiler '/Qp' ('/DPayloadDir=' + $PayloadDirectory) ('/DOutputDir=' + $work) ('/DAppVersion=' + $Version) ('/DTargetRuntime=' + $Runtime) ('/DSetupAppId={' + $id) ('/DSetupMutex=Local\Kikicast.OwnedSetup.' + ([guid]$id).ToString('N')) '/DOutputName=OwnedInstaller' (Join-Path $repo 'scripts/installer/Kikicast.iss')
+    & $InnoCompiler '/Qp' ('/DPayloadDir=' + $PayloadDirectory) ('/DOutputDir=' + $work) ('/DAppVersion=' + $Version) ('/DTargetRuntime=' + $Runtime) ('/DSetupAppId={' + $id) ('/DSetupMutex=Local\Kikicast.OwnedSetup.' + ([guid]$id).ToString('N')) '/DOutputName=OwnedInstaller' ('/DStartupRunKey=' + $ownedStartupSubkey) '/DStartupRunName=Owned' (Join-Path $repo 'scripts/installer/Kikicast.iss')
     if ($LASTEXITCODE -ne 0) { throw 'Owned installer fixture compilation failed.' }
     $setup = Join-Path $work 'OwnedInstaller.exe'
     $args = @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',('/DIR="' + $app + '"'),('/GROUP="' + $group + '"'),('/LOG="' + (Join-Path $EvidenceDirectory 'install.log') + '"'))
@@ -61,10 +63,18 @@ try {
     # Same-ID reinstall exercises upgrade path and keeps one shortcut/registration.
     Run-OwnedInstaller $setup @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',('/LOG="' + (Join-Path $EvidenceDirectory 'upgrade.log') + '"'))
     if (-not (Test-Path $link) -or -not (Test-Path $marker)) { throw 'Owned same-ID upgrade lost a shortcut or generated external profile marker.' }
+    [void](New-Item -Path $ownedStartupRegistry -Force)
+    [void](New-ItemProperty -LiteralPath $ownedStartupRegistry -Name 'Owned' -Value ('"' + (Join-Path $app 'Kikicast.App.exe') + '"') -PropertyType String -Force)
     Run-OwnedInstaller (Join-Path $app 'unins000.exe') @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/LOG="' + (Join-Path $EvidenceDirectory 'uninstall.log') + '"'))
     $installed = $false
     if ((Test-Path $registry) -or (Test-Path $link) -or (Test-Path (Join-Path $app 'Kikicast.App.exe')) -or -not (Test-Path $marker)) { throw 'Owned uninstall left product files/shortcut/registration or removed external marker.' }
-    @{ runtime=$Runtime; privateAppId=$true; identicalPayload=$true; perUserInstall=$true; startMenu=$true; installedTraySmoke=$true; installedModelsSmoke=$true; sameIdentityUpgrade=$true; uninstall=$true; externalGeneratedMarkerRetained=$true; noUserApplicationTerminated=$true; scope='Same installer recipe/payload, private GUID/mutex/group/temp directory; not unassisted real-profile/native-x64 acceptance.' } | ConvertTo-Json | Set-Content (Join-Path $EvidenceDirectory 'installer-evidence.json') -Encoding UTF8
+    if ((Get-ItemProperty -LiteralPath $ownedStartupRegistry).PSObject.Properties['Owned']) { throw 'Owned uninstall retained its exact private startup command.' }
+    # A foreign command in the same private slot must survive uninstall.
+    Run-OwnedInstaller $setup $args; $installed = $true
+    [void](New-ItemProperty -LiteralPath $ownedStartupRegistry -Name 'Owned' -Value 'foreign-owned-marker' -PropertyType String -Force)
+    Run-OwnedInstaller (Join-Path $app 'unins000.exe') @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART'); $installed = $false
+    if ((Get-ItemPropertyValue -LiteralPath $ownedStartupRegistry -Name 'Owned') -ne 'foreign-owned-marker') { throw 'Uninstall removed a foreign startup value.' }
+    @{ privateStartupRegistrationRemoved=$true; foreignStartupValueRetained=$true; realStartupRegistered=$false; runtime=$Runtime; privateAppId=$true; identicalPayload=$true; perUserInstall=$true; startMenu=$true; installedTraySmoke=$true; installedModelsSmoke=$true; sameIdentityUpgrade=$true; uninstall=$true; externalGeneratedMarkerRetained=$true; noUserApplicationTerminated=$true; scope='Same installer recipe/payload, private GUID/mutex/group/temp directory; not unassisted real-profile/native-x64 acceptance.' } | ConvertTo-Json | Set-Content (Join-Path $EvidenceDirectory 'installer-evidence.json') -Encoding UTF8
     $passed = $true
     Write-Output 'PASS: owned per-user installer/start-menu/upgrade/installed apphost/uninstall.'
 } finally {
@@ -74,6 +84,6 @@ try {
             Run-OwnedInstaller (Join-Path $app 'unins000.exe') @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART')
         }
     }
-    if ($passed) { Remove-Item -LiteralPath $work -Recurse -Force }
+    if ($passed) { Remove-Item -LiteralPath $ownedStartupRegistry -Force; Remove-Item -LiteralPath $work -Recurse -Force }
     else { Write-Warning "Failed owned installer evidence/work retained at $work; no user process terminated." }
 }

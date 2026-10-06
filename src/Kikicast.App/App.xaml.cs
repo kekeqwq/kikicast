@@ -20,6 +20,15 @@ public partial class App : System.Windows.Application
     private ThemeService? theme;
     private RunningApplicationDiscovery? discovery;
     private SavedCommandStore? commands;
+    private ExtensionStore? extensions;
+    private LogonStartupRegistration? logonStartup;
+    private string? ownedStartupKey;
+    private string StartupDescription()
+    {
+        try { return logonStartup!.Describe(store!.Preferences, Environment.ProcessPath ?? ""); }
+        catch (Exception ex) when (UserStore.IsStorageError(ex) || ex is System.Security.SecurityException)
+        { return "Windows startup registration cannot be read. No registration was changed."; }
+    }
     private System.Windows.Forms.ToolStripItem? shellMenuItem;
     private readonly List<ShellCommandWindow> shellWindows = [];
     private bool automateOwnedInput;
@@ -61,12 +70,17 @@ public partial class App : System.Windows.Application
             }
         }
         store = new UserStore(directory);
+        // Smoke settings use a private Run-like key, never the real login-startup key.
+        ownedStartupKey = smoke ? @"Software\Kikicast.Tests\Startup\" + Guid.NewGuid().ToString("N") : null;
+        logonStartup = new LogonStartupRegistration(new UserRunRegistry(channel, ownedStartupKey ?? @"Software\Microsoft\Windows\CurrentVersion\Run"));
         theme = new ThemeService(this);
         var cacheDirectory = Path.Combine(smoke ? directory : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), channel), "Cache");
         discovery = new RunningApplicationDiscovery(Path.Combine(directory, "discovered-apps.json"));
         discovery.SetEnabled(!smoke && store.Preferences.ApplicationsEnabled && store.Preferences.DiscoverRunningApplications);
         commands = new SavedCommandStore(Path.Combine(directory, "commands.json"));
-        palette = new MainWindow(store, cacheDirectory, discovery, commands);
+        extensions = new ExtensionStore(Path.Combine(directory, "extensions"));
+        palette = new MainWindow(store, cacheDirectory, discovery, commands, extensions);
+        if (extensions.Warning != null) palette.SetStatus(extensions.Warning);
         if (commands.Warning != null) palette.SetStatus(commands.Warning);
         discovery.Failed += text => Dispatcher.BeginInvoke(() => palette.SetStatus(text));
         if (discovery.Warning != null) palette.SetStatus(discovery.Warning);
@@ -110,7 +124,9 @@ public partial class App : System.Windows.Application
         if (migrationWarning != null || store.LoadWarning != null)
             palette.SetStatus(string.Join("\n", new[] { migrationWarning, store.LoadWarning }.OfType<string>()));
         palette.SetShortcutLabel(store.Preferences);
-        // Normal startup never activates the palette. Only hotkeys summon it.
+        // Login/default startup never activates. This explicit manual-test/open request uses the same one-shot policy.
+        if (!smoke && e.Args.Contains("--show-extensions", StringComparer.Ordinal)) palette.ShowExtensions();
+        // Ordinary startup stays in the tray.
         if (smoke && !e.Args.Contains("--smoke-test-startup", StringComparer.Ordinal)
             && !e.Args.Contains("--smoke-test-windows", StringComparer.Ordinal)
             && !e.Args.Contains("--smoke-test-placement", StringComparer.Ordinal)
@@ -445,14 +461,28 @@ public partial class App : System.Windows.Application
             {
                 var previous = store.Preferences;
                 preferences = WindowLayout.MergeReferences(previous, preferences);
+                var executable = Environment.ProcessPath ?? "";
+                if (preferences.StartAtLogon)
+                {
+                    if (!LogonStartup.ValidExecutable(executable) || !LocalPathSafety.IsFile(executable)) return "Enable startup from a safe local Kikicast.App.exe apphost (not dotnet.exe).";
+                    preferences = preferences with { StartupExecutablePath = executable };
+                }
+                LogonStartupRegistration.Change? startupChange = null;
                 try
                 {
                     if (await hotkeys.ConfigureAsync(preferences) is { } registrationError) return registrationError;
-                    try { await store.UpdatePreferencesAsync(current => WindowLayout.MergeReferences(current, preferences)); }
-                    catch (Exception ex) when (UserStore.IsStorageError(ex))
+                    try
                     {
+                        startupChange = logonStartup!.Apply(previous, preferences.StartAtLogon, executable);
+                        await store.UpdatePreferencesAsync(current => WindowLayout.MergeReferences(current, preferences));
+                    }
+                    catch (Exception ex) when (UserStore.IsStorageError(ex) || ex is InvalidOperationException or ArgumentException or System.Security.SecurityException)
+                    {
+                        string? startupRollback = null;
+                        try { startupChange?.Rollback(); }
+                        catch (Exception rollbackError) { startupRollback = " Startup rollback failed: " + rollbackError.Message; }
                         var rollback = await hotkeys.ConfigureAsync(previous);
-                        return "Settings were not saved: " + ex.Message + (rollback == null ? "" : " " + rollback);
+                        return "Settings were not saved: " + ex.Message + startupRollback + (rollback == null ? "" : " " + rollback);
                     }
                     if (shellMenuItem != null) shellMenuItem.Enabled = preferences.ShellCommandsEnabled;
                     if (!preferences.ShellCommandsEnabled) foreach (var editor in shellWindows.ToArray()) editor.Close();
@@ -463,10 +493,10 @@ public partial class App : System.Windows.Application
                     return null;
                 }
                 finally { await hotkeys.PauseAsync(); }
-            }, discovery!, palette.RefreshApplicationsAsync, commands!, store, () => palette.SettingsItems, palette.RefreshKeepingSelection, () => palette.LayoutApplications);
+            }, discovery!, palette.RefreshApplicationsAsync, commands!, store, () => palette.SettingsItems, palette.RefreshKeepingSelection, () => palette.LayoutApplications, StartupDescription, extensions);
             if (category != null) settingsWindow.SelectCategory(category);
             theme?.Register(settingsWindow, false);
-            if (smokeDirectory != null && (settingsWindow.CategoryCount != 6 || settingsWindow.VisibleBindingCount != 1 + WindowGeometry.Commands.Count))
+            if (smokeDirectory != null && (settingsWindow.CategoryCount != 7 || settingsWindow.VisibleBindingCount != 1 + WindowGeometry.Commands.Count))
             { Console.Error.WriteLine("Settings categories or binding rows missing"); Shutdown(1); return; }
             if (automateOwnedInput && evidenceDirectory != null)
             {
@@ -478,7 +508,7 @@ public partial class App : System.Windows.Application
                         await OwnedInputAutomation.ClickToActivateAsync(ownedSettings, Path.Combine(evidenceDirectory, "settings-activation-point.png"));
                         await ownedSettings.VerifyCategoryInputAsync(evidenceDirectory);
                         automationSettingsPassed = true;
-                        await File.WriteAllTextAsync(Path.Combine(evidenceDirectory, "settings-input-evidence.json"), "{\"categoryCount\":6,\"forwardCtrlTab\":true,\"wrap\":true,\"reverseCtrlShiftTab\":true,\"saveRoundTripSensitivity\":true,\"saveRoundTripIcons\":true,\"saveRoundTripDepth\":true,\"saveRoundTripAppPaths\":true,\"saveRoundTripPackagedApps\":true,\"saveRoundTripItemShortcut\":true,\"shortcutWriteFailureRollback\":true,\"shortcutConflictRefused\":true,\"scope\":\"Owned synthetic input, not physical acceptance\"}");
+                        await File.WriteAllTextAsync(Path.Combine(evidenceDirectory, "settings-input-evidence.json"), "{\"categoryCount\":7,\"forwardCtrlTab\":true,\"wrap\":true,\"reverseCtrlShiftTab\":true,\"saveRoundTripSensitivity\":true,\"saveRoundTripIcons\":true,\"saveRoundTripDepth\":true,\"saveRoundTripAppPaths\":true,\"saveRoundTripPackagedApps\":true,\"saveRoundTripItemShortcut\":true,\"shortcutWriteFailureRollback\":true,\"shortcutConflictRefused\":true,\"scope\":\"Owned synthetic input, not physical acceptance\"}");
                     }
                     catch (Exception ex) { Console.Error.WriteLine("Settings input smoke failed: " + ex); Shutdown(1); }
                 };
@@ -513,6 +543,7 @@ public partial class App : System.Windows.Application
         commands?.FlushAsync().Wait(TimeSpan.FromSeconds(2));
         if (ownsInstance) instance?.ReleaseMutex();
         instance?.Dispose();
+        if (ownedStartupKey != null) Microsoft.Win32.Registry.CurrentUser.DeleteSubKeyTree(ownedStartupKey, throwOnMissingSubKey: false);
         if (smokeDirectory != null && Directory.Exists(smokeDirectory)) Directory.Delete(smokeDirectory, true);
         base.OnExit(e);
     }

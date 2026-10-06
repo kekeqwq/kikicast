@@ -19,6 +19,8 @@ public partial class MainWindow
     private Row? ResolveBindingRow(string id)
     {
         if (!LauncherBindings.CanBind(id) || !LauncherBindings.FeatureEnabled(id, store.Preferences)) return null;
+        if (ExtensionIdentity.IsEntry(id))
+        { var resolved = extensions.Resolve(id); return resolved == null ? null : new(resolved.Value.Command.Title, "Windows/.NET extension", Extension: resolved.Value.Command); }
         if (WindowLayout.TryId(id, out var layoutId))
         {
             var layout = WindowLayout.Runnable(store.Preferences, layoutId);

@@ -33,6 +33,10 @@ Windows 原生版 Tinycast，目标是尽量保持跨平台一致的操作逻辑
 
 自带 .NET 10 runtime，默认当前用户安装，无需管理员权限；创建开始菜单和 Windows 应用卸载入口。默认不自启；启动后在托盘，双 Ctrl 呼出。先退出旧实例再升级/卸载；卸载保留家目录个人配置。PowerShell 7 仅 Shell/命令功能单独需要。预览版无可信签名，SHA-256 不是签名替代，不应关闭 Windows 安全保护。ARM64 原生与 x64-on-ARM64 仿真验证明确分开，不宣称已通过原生 x64 或完整人工验收。详见 [0.1 说明](docs/releases/0.1.0-preview.1.md) / [安装包合同](docs/installer.md)。
 
+## 0.2 开发中（尚未发布）
+
+Windows/.NET 独立扩展包、官方 GitHub Releases 目录、安装/更新/禁用/卸载、宿主声明式设置和 Extensions 命令/绑定已接入；第一款 RandomWallpaper 的源码在独立 [kikicast.extensions](https://github.com/kekeqwq/kikicast.extensions) 仓库。General 新增默认关闭的 Windows 登录自启，只启动托盘 Kikicast，不运行壁纸命令。详见 [扩展合同](docs/extensions.md) / [自启合同](docs/logon-startup.md)。真实壁纸/锁屏/回收源图留待用户手动验收；0.1 安装包未改动，新 0.2 Setup.exe/原生 x64/可信签名/稳定版验收仍待完成。
+
 ## 构建与运行
 
 ```powershell

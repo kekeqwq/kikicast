@@ -1,5 +1,5 @@
 ; Inno Setup 7.1.0. Public per-user installation; no elevation, process kill,
-; autostart, settings migration/removal, Shell extension or file associations.
+; default autostart, settings migration/removal, Shell extension or file associations.
 #ifndef PayloadDir
   #error PayloadDir is required
 #endif
@@ -17,6 +17,12 @@
 #endif
 #ifndef SetupMutex
   #define SetupMutex "Local\Kikicast"
+#endif
+#ifndef StartupRunKey
+  #define StartupRunKey "Software\Microsoft\Windows\CurrentVersion\Run"
+#endif
+#ifndef StartupRunName
+  #define StartupRunName "Kikicast"
 #endif
 #ifndef OutputName
   #if TargetRuntime == "win-arm64"
@@ -87,3 +93,14 @@ Filename: "{app}\Kikicast.App.exe"; Description: "Start Kikicast (tray only; dou
 
 ; Deliberately no [UninstallDelete] wildcard: uninstall removes recorded
 ; installed files/shortcuts/registration, never ~/.config/kikicast or unknown files.
+
+[Code]
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  RegisteredCommand: String;
+begin
+  if CurUninstallStep = usPostUninstall then
+    if RegQueryStringValue(HKCU, '{#StartupRunKey}', '{#StartupRunName}', RegisteredCommand) then
+      if CompareText(RegisteredCommand, '"' + ExpandConstant('{app}\Kikicast.App.exe') + '"') = 0 then
+        RegDeleteValue(HKCU, '{#StartupRunKey}', '{#StartupRunName}');
+end;

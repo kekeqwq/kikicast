@@ -32,6 +32,7 @@ public partial class SettingsWindow : Window
     }
 
     private readonly Func<AppPreferences, Task<string?>> apply;
+    private readonly Func<string>? startupStatus;
     private readonly AppPreferences original;
     private readonly RunningApplicationDiscovery discovery;
     private readonly Func<Task> refreshStartMenu;
@@ -54,14 +55,20 @@ public partial class SettingsWindow : Window
     public int VisibleBindingCount => 1 + windowRows.Length;
     public int CategoryCount => Categories.Items.Count;
 
-    public SettingsWindow(AppPreferences preferences, Func<AppPreferences, Task<string?>> apply, RunningApplicationDiscovery discovery, Func<Task> refreshStartMenu, SavedCommandStore commands, UserStore userStore, Func<IReadOnlyList<LauncherSettingsItem>> launcherCatalog, Action refreshLauncher, Func<IReadOnlyList<LauncherEntry>>? layoutApplications = null)
+    public SettingsWindow(AppPreferences preferences, Func<AppPreferences, Task<string?>> apply, RunningApplicationDiscovery discovery, Func<Task> refreshStartMenu, SavedCommandStore commands, UserStore userStore, Func<IReadOnlyList<LauncherSettingsItem>> launcherCatalog, Action refreshLauncher, Func<IReadOnlyList<LauncherEntry>>? layoutApplications = null, Func<string>? startupStatus = null, ExtensionStore? extensions = null)
     {
         InitializeComponent();
-        this.apply = apply;
+        this.apply = apply; this.startupStatus = startupStatus;
         this.discovery = discovery; this.refreshStartMenu = refreshStartMenu;
         this.commands = commands; this.userStore = userStore;
         this.launcherCatalog = launcherCatalog; this.refreshLauncher = refreshLauncher;
         this.layoutApplications = layoutApplications ?? (() => []);
+        this.extensions = extensions;
+        EnableExtensions.IsChecked = preferences.ExtensionsEnabled; ShowExtensionCommands.IsChecked = preferences.ShowExtensions;
+        InputMethod.SetIsInputMethodEnabled(InstalledExtensions, false); InputMethod.SetIsInputMethodEnabled(ExtensionFolders, false); InputMethod.SetIsInputMethodEnabled(ExtensionCatalogItems, false);
+        RefreshExtensions();
+        StartAtLogon.IsChecked = preferences.StartAtLogon;
+        StartupStatus.Text = startupStatus?.Invoke() ?? "Startup registration status is unavailable in this model-only view.";
         EnableApplications.IsChecked = preferences.ApplicationsEnabled;
         ShowApplicationIcons.IsChecked = preferences.ShowApplicationIcons;
         FolderDepth.SelectedIndex = preferences.ApplicationFolderDepth;
@@ -318,10 +325,10 @@ public partial class SettingsWindow : Window
     private void MousePressed(object sender, MouseButtonEventArgs e) { if (recordingRow != null) detector.Cancel(); }
     private async void Save(object sender, RoutedEventArgs e)
     {
-        if (saving || commandsSaving || launcherSaving || layoutBusy || recordingRow != null) return;
+        if (saving || commandsSaving || launcherSaving || layoutBusy || extensionBusy || recordingRow != null) return;
         if (!double.TryParse(WindowGap.Text, System.Globalization.CultureInfo.CurrentCulture, out var gap))
         { Feedback.Text = "Enter a valid window gap."; return; }
-        var preferences = Draft() with { WindowManagementEnabled = WindowManagement.IsChecked == true,
+        var preferences = Draft() with { ExtensionsEnabled = EnableExtensions.IsChecked == true, ShowExtensions = ShowExtensionCommands.IsChecked == true, StartAtLogon = StartAtLogon.IsChecked == true, WindowManagementEnabled = WindowManagement.IsChecked == true,
             ShowWindowCommands = ShowWindows.IsChecked == true, ShowWindowLayouts = ShowLayouts.IsChecked == true, WindowGap = gap, HalfCycleMode = (WindowCycleMode)HalfCycleSelector.SelectedIndex, CycleHalfSizes = HalfCycleSelector.SelectedIndex == (int)WindowCycleMode.Sizes, ShowSuggestions = Suggestions.IsChecked == true, DiscoverRunningApplications = DiscoverApps.IsChecked == true,
             CalculatorEnabled = EnableCalculator.IsChecked == true, CurrencyConversionEnabled = EnableCurrency.IsChecked == true,
             CalculationHistoryEnabled = EnableCalcHistory.IsChecked == true, ShellCommandsEnabled = EnableShell.IsChecked == true,
@@ -331,9 +338,9 @@ public partial class SettingsWindow : Window
             ShowApplicationIcons = ShowApplicationIcons.IsChecked == true, ApplicationFolderDepth = FolderDepth.SelectedIndex, IncludeWindowsAppPaths = IncludeAppPaths.IsChecked == true, IncludePackagedApplications = IncludePackagedApps.IsChecked == true, MatchSensitivity = SensitivityHigh.IsChecked == true ? SearchSensitivity.High : SensitivityLow.IsChecked == true ? SearchSensitivity.Low : SearchSensitivity.Medium };
         if (preferences.Validate() is { } invalid) { Feedback.Text = invalid; return; }
         saving = true; SaveButton.IsEnabled = Categories.IsEnabled = false;
-        try { Feedback.Text = await apply(preferences) ?? "Saved. These settings return on the next launch."; }
+        try { Feedback.Text = await apply(preferences) ?? "Saved. These settings return on the next launch."; StartupStatus.Text = startupStatus?.Invoke(); }
         catch (Exception ex) { Feedback.Text = "Save failed: " + ex.Message; }
         finally { saving = false; SaveButton.IsEnabled = Categories.IsEnabled = true; }
     }
-    private void WindowClosing(object? sender, CancelEventArgs e) { if (saving || commandsSaving || launcherSaving) e.Cancel = true; else StopRecording(); }
+    private void WindowClosing(object? sender, CancelEventArgs e) { if (saving || commandsSaving || launcherSaving || extensionBusy) e.Cancel = true; else StopRecording(); }
 }

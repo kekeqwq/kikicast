@@ -7,6 +7,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Kikicast.Core.Tests/Kikicast.Core.Tests.csproj" />
     <Project Path="tests/Kikicast.Discovery.Fixture/Kikicast.Discovery.Fixture.csproj" />
+    <Project Path="tests/Kikicast.Extension.Fixture/Kikicast.Extension.Fixture.csproj" />
     <Project Path="tests/Kikicast.Windows.Tests/Kikicast.Windows.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">

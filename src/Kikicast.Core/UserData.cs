@@ -5,6 +5,10 @@ public sealed record AppPreferences
     public int Version { get; init; } = 1;
     public HotKeyBinding? PaletteBinding { get; init; } = new();
     public bool AltSpaceFallback { get; init; }
+    public bool StartAtLogon { get; init; }
+    public bool ExtensionsEnabled { get; init; }
+    public bool ShowExtensions { get; init; } = true;
+    public string? StartupExecutablePath { get; init; }
     public bool WindowManagementEnabled { get; init; }
     public bool ShowWindowCommands { get; init; } = true;
     public List<CustomWindowSize> CustomWindowSizes { get; init; } = [];
@@ -39,6 +43,7 @@ public sealed record AppPreferences
     public string? Validate()
     {
         if (Version != 1) return "Unsupported settings version.";
+        if (StartupExecutablePath != null && !LogonStartup.ValidExecutable(StartupExecutablePath)) return "Invalid saved startup executable path.";
         if (HalfCycleMode is { } cycleMode && !Enum.IsDefined(cycleMode)) return "Unknown half-cycle mode.";
         if (!Enum.IsDefined(MatchSensitivity)) return "Unknown launcher search sensitivity.";
         if (!double.IsFinite(WindowGap) || WindowGap is < 0 or > 100) return "Window gap must be 0–100 DIP.";

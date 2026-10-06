@@ -90,6 +90,10 @@ Launcher 页管理稳定 ID 的别名/隐藏/收藏，含缺失引用；条目�
 
 管理员窗口、UAC 安全桌面、游戏等不保证可操作；报告边界，不默认以管理员身份常驻。最大化与填满工作区分开记录，不把它们当原生全屏。
 
+## 0.2 Windows/.NET 扩展与登录自启
+
+见 [扩展协议/存储/门禁/人工边界](extensions.md) 与 [默认关闭登录自启/回滚/卸载归属](logon-startup.md)。扩展逻辑在独立仓库与独立自包含进程；主进程处理静态包元数据、声明式表单、包事务及当前定义执行。不是 Raycast 宿主或安全沙箱；加载/设置/安装/更新/登录不执行壁纸命令，真实设置/锁屏/源图回收只留用户手测。
+
 ## 存储与导入
 
 当前配置与文本历史放 `~/.config/kikicast/`，Debug 使用 `kikicast-dev/`；原 LocalAppData 数据按缺文件迁移，保留原件、不覆盖新文件。当前为版本化 `settings.json`、`history.json`、`discovered-apps.json`、`commands.json` 原子写入，渠道隔离；发现表损坏时禁写而非覆盖。后续学习/便携入口/计算历史拆分 JSON，剪贴板计划用 SQLite；笔记/片段计划用可读 Markdown；缓存留 LocalAppData 独立目录，不能清掉用户学习。完整存储对照见 [上游复核](upstream-alignment-review.md)。

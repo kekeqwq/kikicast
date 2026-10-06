@@ -11,16 +11,16 @@ namespace Kikicast.App;
 public partial class MainWindow : Window
 {
     private sealed record Row(string Title, string Subtitle, LauncherEntry? Entry = null, string? Answer = null,
-        string? Command = null, WindowAction? WindowAction = null, string Section = "Results", string? FavoriteChord = null, bool IsFavorite = false, CurrencyQuery? Currency = null, string? ShellText = null, SavedCommand? Custom = null, CalculationVisit? HistoryItem = null, string? Alias = null, string? GlobalChord = null, CustomWindowSize? WindowSize = null, WindowLayout? Layout = null)
+        string? Command = null, WindowAction? WindowAction = null, string Section = "Results", string? FavoriteChord = null, bool IsFavorite = false, CurrencyQuery? Currency = null, string? ShellText = null, SavedCommand? Custom = null, CalculationVisit? HistoryItem = null, string? Alias = null, string? GlobalChord = null, CustomWindowSize? WindowSize = null, WindowLayout? Layout = null, ExtensionCommand? Extension = null)
     {
         public bool IsCurrency => Currency != null;
         public string CurrencyOutput => Title;
         public string? CurrencyInput => Currency?.InputLabel;
-        public string? Id => Layout != null ? Layout.EntryId : WindowSize != null ? WindowSize.EntryId : Custom != null ? Custom.EntryId : Command == "shell-query" ? null : Entry != null ? Entry.Id
+        public string? Id => Extension != null ? Extension.EntryId : Layout != null ? Layout.EntryId : WindowSize != null ? WindowSize.EntryId : Custom != null ? Custom.EntryId : Command == "shell-query" ? null : Entry != null ? Entry.Id
             : WindowAction is { } action ? LauncherSections.WindowId(action) : Command != null ? "cmd:" + Command : null;
         public string UsageKey => Entry?.UsageKey ?? Id ?? "";
         public bool ShowSubtitle => Entry == null && WindowAction == null;
-        public string RightLabel => FavoriteChord ?? GlobalChord ?? (Entry != null ? "Application" : Layout != null ? "Window layout" : WindowAction != null || WindowSize != null ? "Window command" : Custom != null ? "Custom command" : Answer != null ? "Calculation" : "Command");
+        public string RightLabel => FavoriteChord ?? GlobalChord ?? (Extension != null ? "Extension" : Entry != null ? "Application" : Layout != null ? "Window layout" : WindowAction != null || WindowSize != null ? "Window command" : Custom != null ? "Custom command" : Answer != null ? "Calculation" : "Command");
         public string DisplayTitle => (IsFavorite ? "★ " : "") + Title + (string.IsNullOrWhiteSpace(Alias) ? "" : " · " + Alias);
     }
     private bool updatingPreferences, categoryQuery;
@@ -32,6 +32,7 @@ public partial class MainWindow : Window
     private readonly CurrencyRateService currencyRates;
     private readonly RunningApplicationDiscovery discovery;
     private readonly SavedCommandStore commands;
+    private readonly ExtensionStore extensions;
     private IReadOnlyList<LauncherEntry> startMenuEntries = [];
     private Task? activeIndexRefresh;
     private bool indexRefreshAgain;
@@ -62,10 +63,11 @@ public partial class MainWindow : Window
     private bool composing;
     private string? persistentStatus;
 
-    public MainWindow(UserStore store, string cacheDirectory, RunningApplicationDiscovery discovery, SavedCommandStore commands)
+    public MainWindow(UserStore store, string cacheDirectory, RunningApplicationDiscovery discovery, SavedCommandStore commands, ExtensionStore extensions)
     {
         this.store = store;
-        this.discovery = discovery; this.commands = commands;
+        this.discovery = discovery; this.commands = commands; this.extensions = extensions;
+        extensions.Changed += ExtensionsChanged;
         commands.Changed += DiscoveredAppsChanged;
         discovery.Changed += DiscoveredAppsChanged;
         discovery.StartMenuInvalidated += StartMenuInvalidated;
@@ -83,6 +85,7 @@ public partial class MainWindow : Window
         InputLanguageManager.Current.InputLanguageChanging += InputLanguageChanging;
         Closed += (_, _) =>
         {
+            extensions.Changed -= ExtensionsChanged;
             applicationIcons.Dispose(); inputSession.End(); currencyRates.Dispose(); discovery.Changed -= DiscoveredAppsChanged; discovery.StartMenuInvalidated -= StartMenuInvalidated; commands.Changed -= DiscoveredAppsChanged;
             InputLanguageManager.Current.InputLanguageChanging -= InputLanguageChanging;
         };
@@ -148,6 +151,7 @@ public partial class MainWindow : Window
         Query.Clear(); Refresh(); Query.Focus();
     }
 
+    public void ShowExtensions() { if (!IsVisible) Toggle(); if (IsVisible) { Query.Text = "Extensions"; Query.Focus(); } }
     public void Toggle() => ToggleFrom(ForegroundTarget.Capture());
 
     // The controlled smoke fixture can supply an owned target. Production captures before Show.
@@ -232,7 +236,8 @@ public partial class MainWindow : Window
     private void QueryChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
     { if (ready) Refresh(); }
 
-    private static LauncherKind Kind(Row row) => row.Entry != null ? LauncherKind.Application
+    private void ExtensionsChanged() { if (ready && !Dispatcher.HasShutdownStarted) Dispatcher.BeginInvoke(RefreshKeepingSelection); }
+    private static LauncherKind Kind(Row row) => row.Extension != null ? LauncherKind.Extension : row.Entry != null ? LauncherKind.Application
         : row.Layout != null ? LauncherKind.WindowLayout : row.WindowAction != null || row.WindowSize != null ? LauncherKind.WindowCommand : row.Custom != null ? LauncherKind.CustomCommand : LauncherKind.Command;
     private void SetRows(List<Row> rows)
     {
@@ -268,6 +273,8 @@ public partial class MainWindow : Window
         }
         if (store.Preferences.WindowManagementEnabled && store.Preferences.ApplicationsEnabled && store.Preferences.ShowWindowLayouts)
             candidates.AddRange(store.Preferences.WindowLayouts.Where(x => x.Enabled).Select(x => new Row(x.Name, x.Summary, Layout: x)));
+        if (store.Preferences.ExtensionsEnabled && store.Preferences.ShowExtensions)
+            candidates.AddRange(extensions.Commands().Select(x => new Row(x.Title, "Windows/.NET extension · Explicit Enter to run", Extension: x)));
         candidates.AddRange(BuiltInRows());
         if (store.Preferences.SavedCommandsEnabled)
             candidates.AddRange(commands.Current.Visible(store.Preferences)
@@ -289,6 +296,7 @@ public partial class MainWindow : Window
         {
             "app" or "application" or "applications" => LauncherKind.Application,
             "window" or "windowcommand" or "windowcommands" or "windowmanagement" => LauncherKind.WindowCommand,
+            "extension" or "extensions" => LauncherKind.Extension,
             "customcommand" or "customcommands" => LauncherKind.CustomCommand,
             "layout" or "layouts" or "windowlayout" or "windowlayouts" => LauncherKind.WindowLayout,
             "command" or "commands" => LauncherKind.Command, _ => null
@@ -551,7 +559,19 @@ public partial class MainWindow : Window
         executing = true;
         try
         {
-            if (row.Custom is { } saved)
+            if (row.Extension is { } pluginCommand)
+            {
+                var current = store.Preferences.ExtensionsEnabled ? extensions.Resolve(pluginCommand.EntryId) : null;
+                if (current == null) return;
+                Dismiss(true);
+                var confirmed = !current.Value.Command.Destructive || System.Windows.MessageBox.Show("Replace the current source with a different valid image, then send the verified prior source to the Recycle Bin?\n\nReplacement must succeed for every target still using the prior image. External wallpaper changes/source changes refuse deletion. No permanent-delete fallback.", current.Value.Command.Title, MessageBoxButton.YesNoCancel, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes;
+                if (!confirmed) return;
+                var result = await ExtensionClient.ExecuteAsync(extensions, pluginCommand.EntryId, () => store.Preferences.ExtensionsEnabled, confirmed);
+                if (result.Success) { store.RecordLaunch(pluginCommand.EntryId, learnedQuery); ActionCompleted?.Invoke(result.Summary); }
+                else ActionFailed?.Invoke(result.Summary);
+                SetStatus(result.Summary);
+            }
+            else if (row.Custom is { } saved)
             {
                 var current = commands.Current.Runnable(saved.Id, store.Preferences);
                 if (current == null) return;
